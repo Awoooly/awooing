@@ -1,0 +1,33 @@
+{
+	"schemaVersion": 1,
+	"id": "awooing",
+	"version": "${version}",
+	"name": "awooing",
+	"description": "Ever just \"Awoo\"?",
+	"authors": [
+		"Awoly"
+	],
+	"contact": {
+		"homepage": "https://www.youtube.com/shorts/5AT6B7nwy3I"
+	},
+	"license": "All Rights Reserved",
+	"icon": "assets/awooing/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"client": [
+			"com.awoly.awooing.client.Awooing"
+		]
+	},
+	"mixins": [
+		"awooing.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.18.1",
+		"minecraft": "~1.21.10",
+		"java": ">=21",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}

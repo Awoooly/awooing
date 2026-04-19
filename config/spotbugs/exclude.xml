@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- Global mod state is intentionally static and mutable across callbacks -->
+    <Match>
+        <Class name="com.awoly.awooing.client.Awooing"/>
+        <Bug pattern="MS_CANNOT_BE_FINAL"/>
+    </Match>
+    <!-- Fabric calls this initializer once for the client entrypoint; the INSTANCE write is intentional singleton publication. -->
+    <Match>
+        <Class name="com.awoly.awooing.client.Awooing"/>
+        <Method name="onInitializeClient"/>
+        <Bug pattern="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD"/>
+    </Match>
+    <Match>
+        <Class name="com.awoly.awooing.client.ChatClient"/>
+        <Bug pattern="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD"/>
+    </Match>
+    <!-- Cannot be copied or wrapped -->
+    <Match>
+        <Class name="com.awoly.awooing.client.emoji.Emoji"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="com.awoly.awooing.client.emoji.EmojiRegistry"/>
+        <Bug pattern="MS_EXPOSE_REP"/>
+    </Match>
+        <Match>
+        <Class name="com.awoly.awooing.server.User"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+    <!-- Mixin bytecode weaving causes static analyzers to infer impossible casts/unused shadow fields -->
+    <Match>
+        <Class name="~com\.awoly\.awooing\.client\.mixin\..*"/>
+        <Bug pattern="BC_IMPOSSIBLE_INSTANCEOF,BC_IMPOSSIBLE_CAST,BC_UNCONFIRMED_CAST,BC_VACUOUS_INSTANCEOF,URF_UNREAD_FIELD"/>
+    </Match>
+        <!-- InputStream is properly closed via try-with-resources -->
+    <Match>
+        <Class name="com.awoly.awooing.server.ChatServer"/>
+        <Method name="configureSsl"/>
+        <Bug pattern="OBL_UNSATISFIED_OBLIGATION_EXCEPTION_EDGE"/>
+    </Match>
+
+    <!-- Handler instances intentionally retain the shared ChatServer reference. -->
+    <Match>
+        <Class name="~com\.awoly\.awooing\.server\.handlers\..*"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+
+</FindBugsFilter>

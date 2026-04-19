@@ -1,0 +1,22 @@
+{
+	"required": true,
+	"package": "com.awoly.awooing.client.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	},
+	"client": [
+		"CommandTreeMixin",
+		"TextRendererMixin",
+		"TextFieldWidgetMixin",
+		"TextHandlerMixin",
+		"TextHandlerLineBreakingVisitorMixin",
+		"ChatScreenMixin",
+		"SuggestionWindowMixin",
+		"TextFieldWidgetAccessor",
+		"ChatInputSuggestorAccessor"
+	]
+}

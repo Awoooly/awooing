@@ -1,0 +1,32 @@
+// Helper tasks that expose always-running checkstyle entries to the Gradle view.
+tasks.register('checkstyleAllAlways') {
+	group = 'verification'
+	description = 'Run client and server checkstyleMain (always run)'
+	dependsOn(':client:checkstyleMain', ':server:checkstyleMain')
+	outputs.upToDateWhen { false }
+}
+
+tasks.register('checkstyleClientAlways') {
+	group = 'verification'
+	description = 'Run :client:checkstyleMain (always run)'
+	dependsOn(':client:checkstyleMain')
+	outputs.upToDateWhen { false }
+}
+
+tasks.register('checkstyleServerAlways') {
+	group = 'verification'
+	description = 'Run :server:checkstyleMain (always run)'
+	dependsOn(':server:checkstyleMain')
+	outputs.upToDateWhen { false }
+}
+
+// Ensure the actual subproject checkstyleMain tasks are treated as never up-to-date
+// so running the wrapper tasks in the Gradle view will always re-run the checks.
+gradle.projectsEvaluated {
+	project(':client').tasks.matching { it.name == 'checkstyleMain' }.configureEach {
+		outputs.upToDateWhen { false }
+	}
+	project(':server').tasks.matching { it.name == 'checkstyleMain' }.configureEach {
+		outputs.upToDateWhen { false }
+	}
+}

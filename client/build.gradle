@@ -1,0 +1,113 @@
+plugins {
+    id 'fabric-loom' version "${loom_version}"
+    id 'maven-publish'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+    id 'com.github.spotbugs'
+    id 'checkstyle'
+}
+
+spotbugs {
+    toolVersion = '4.8.6'
+    effort = com.github.spotbugs.snom.Effort.valueOf('MAX')
+    reportLevel = com.github.spotbugs.snom.Confidence.valueOf('DEFAULT')
+    ignoreFailures = true
+    excludeFilter = rootProject.file('config/spotbugs/exclude.xml')
+}
+
+tasks.withType(com.github.spotbugs.snom.SpotBugsTask).configureEach {
+    reports {
+        html.required = true
+        xml.required = false
+    }
+}
+
+checkstyle {
+    toolVersion = '10.12.0'
+    configFile = rootProject.file('config/checkstyle/google_checks.xml')
+}
+
+tasks.withType(Checkstyle) {
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+shadowJar {
+    archiveClassifier.set('')
+    relocate 'org.java_websocket', 'com.awoly.libs.java_websocket'
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+    // Append Minecraft version as a suffix so builds include the game version.
+    archivesName = "${project.archives_base_name}+${project.minecraft_version}"
+}
+
+repositories {
+    // Loom wires core repos for Minecraft/Fabric dependencies.
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+
+    implementation "org.java-websocket:Java-WebSocket:1.5.4"
+    implementation 'com.google.code.gson:gson:2.10.1'
+    include "org.java-websocket:Java-WebSocket:1.5.4"
+
+    def authMeJar = rootProject.file("devlibs/authme-fabric-${project.authme_version}.jar")
+    def resourcefulJar = rootProject.file("devlibs/ResourcefulConfig-fabric-${project.resourceful_version}.jar")
+
+    if (authMeJar.exists() && resourcefulJar.exists()) {
+        modCompileOnly(files(authMeJar))
+        modCompileOnly(files(resourcefulJar))
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src/main/java', '../common/src/main/java']
+        }
+    }
+}
+
+processResources {
+    inputs.property "version", project.version
+
+    filesMatching("fabric.mod.json") {
+        expand "version": inputs.properties.version
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.release = 21
+}
+
+java {
+    withSourcesJar()
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+jar {
+    inputs.property "archivesName", project.base.archivesName
+
+    from("../LICENSE") {
+        rename { "${it}_${inputs.properties.archivesName}" }
+    }
+}
+
+publishing {
+    publications {
+        create("mavenJava", MavenPublication) {
+            artifactId = project.base.archivesName
+            from components.java
+        }
+    }
+}
