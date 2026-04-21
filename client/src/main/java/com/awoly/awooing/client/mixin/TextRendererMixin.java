@@ -19,12 +19,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class TextRendererMixin {
     /** Swaps in emoji substitution before text is prepared for rendering. */
     @Inject(
-            method = "prepare(Lnet/minecraft/text/OrderedText;FFIZI)"
+            method = "prepare(Lnet/minecraft/text/OrderedText;FFIZZI)"
                     + "Lnet/minecraft/client/font/TextRenderer$GlyphDrawable;",
             at = @At("HEAD"),
             cancellable = true)
-    private void wrapPrepare(OrderedText text, float x, float y, int color, boolean shadow, int backgroundColor,
-            CallbackInfoReturnable<TextRenderer.GlyphDrawable> cir) {
+    private void wrapPrepare(OrderedText text, float x, float y, int color, boolean shadow, boolean trackEmpty,
+            int backgroundColor, CallbackInfoReturnable<TextRenderer.GlyphDrawable> cir) {
         if (text instanceof EmojiSubstitutingText) {
             return;
         }
@@ -36,13 +36,13 @@ public abstract class TextRendererMixin {
         }
         cir.setReturnValue(
                 ((TextRenderer) (Object) this)
-                        .prepare(new EmojiSubstitutingText(text), x, y, color, shadow, backgroundColor));
+                        .prepare(new EmojiSubstitutingText(text), x, y, color, shadow, trackEmpty, backgroundColor));
     }
 
     private static boolean hasEmojiFont(OrderedText text) {
         boolean[] found = {false};
         text.accept((index, style, codePoint) -> {
-            if (Utils.isEmojiStyled(style)) {
+            if (Utils.isEmojiStyled(style) || Utils.isEmojiGlyphStyled(style)) {
                 found[0] = true;
                 return false;
             }

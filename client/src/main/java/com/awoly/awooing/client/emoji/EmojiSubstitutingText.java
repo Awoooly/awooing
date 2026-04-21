@@ -42,7 +42,19 @@ public final class EmojiSubstitutingText implements OrderedText {
             Style style = styles.get(i);
 
             if (Utils.isEmojiGlyphStyled(style)) {
-                if (!visitor.accept(outIndex++, style, cp)) {
+                Emoji emoji = EmojiRegistry.getById(cp);
+                if (emoji == null) {
+                    if (!visitor.accept(outIndex++, style, cp)) {
+                        return false;
+                    }
+                    i++;
+                    continue;
+                }
+
+                Style emojiStyle = style
+                    .withHoverEvent(new HoverEvent.ShowText(buildHoverText(emoji)))
+                    .withColor(Utils.INFO_COLOR);
+                if (!visitor.accept(outIndex++, emojiStyle, cp)) {
                     return false;
                 }
                 i++;
