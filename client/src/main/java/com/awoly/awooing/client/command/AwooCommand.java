@@ -48,11 +48,13 @@ public class AwooCommand {
             renderMsg(INFO_COLOR, "v" + getVersion());
             return Command.SINGLE_SUCCESS;
         })
-            .then(literal("connect").executes(ctx -> connectToHost(config.lastIp, config.lastPort))
+            .then(literal("connect").executes(ctx -> connectToHost(config.lastIp, config.lastPort)))
+            .then(literal("changeip")
+                .executes(ctx -> showUsage("/awoo changeip <IP> [Port]"))
                 .then(argument("ip", word())
-                    .executes(ctx -> saveToConfigAndConnect(getString(ctx, "ip"), config.lastPort))
-                    .then(argument("port", integer()).executes(
-                        ctx -> saveToConfigAndConnect(getString(ctx, "ip"), getInteger(ctx, "port"))))))
+                    .executes(ctx -> updateConnectionConfig(getString(ctx, "ip"), null))
+                    .then(argument("port", integer())
+                        .executes(ctx -> updateConnectionConfig(getString(ctx, "ip"), getInteger(ctx, "port"))))))
             .then(literal("roomprivacy")
                 .executes(ctx -> showUsage("/awoo roomprivacy <room> <public|private> [password]"))
                 .then(argument("room", word()).suggests(suggestLedRooms())
@@ -125,11 +127,13 @@ public class AwooCommand {
                         .executes(ctx -> host(getString(ctx, "user"), getString(ctx, "room")))))));
     }
 
-    private static int saveToConfigAndConnect(String ip, int port) {
+    private static int updateConnectionConfig(String ip, Integer port) {
         config.lastIp = ip;
-        config.lastPort = port;
+        if (port != null) {
+            config.lastPort = port;
+        }
         save();
-        connectToHost(config.lastIp, config.lastPort);
+        renderMsg(INFO_COLOR, "Server set to " + config.lastIp + ":" + config.lastPort);
         return Command.SINGLE_SUCCESS;
     }
 
