@@ -106,6 +106,11 @@ public class AwooCommand {
                 .then(argument("color", word()).suggests(suggestAnnouncementColors())
                     .then(argument("announcement", greedyString())
                         .executes(ctx -> announce(getString(ctx, "color"), getString(ctx, "announcement"))))))
+            .then(literal("op")
+                .requires(ctx -> isAdmin())
+                .executes(ctx -> showUsage("/awoo op <username>"))
+                .then(argument("username", word()).suggests(suggestUsers())
+                    .executes(ctx -> op(getString(ctx, "username")))))
             .then(literal("autoconnect").executes(ctx -> toggleAutoConnect()))
             .then(literal("disconnect").executes(ctx -> disconnect()))
             .then(literal("leave")
@@ -212,6 +217,15 @@ public class AwooCommand {
             }
             return builder.buildFuture();
         };
+    }
+
+    private static int op(String username) {
+        if (!requireConnected()) {
+            return Command.SINGLE_SUCCESS;
+        }
+
+        Awooing.getInstance().chatClient.sendPacket(Packet.op(username));
+        return Command.SINGLE_SUCCESS;
     }
 
     private static int list(String roomId) {

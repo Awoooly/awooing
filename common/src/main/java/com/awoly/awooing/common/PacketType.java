@@ -25,6 +25,7 @@ public enum PacketType {
     CHANGE_PASSWORD("change_password"),
     ROOM_INVITE("room_invite"),
     KICK("kick"),
+    OP("op"),
     PRIVATE_MSG("private_msg");
 
     private final String key;
