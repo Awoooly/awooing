@@ -1,6 +1,7 @@
 package com.awoly.awooing.client.command;
 
 import static com.awoly.awooing.client.Awooing.LOGGER;
+import static com.awoly.awooing.client.Utils.EMOJI_GLYPH_FONT;
 import static com.awoly.awooing.client.Utils.INFO_COLOR;
 import static com.awoly.awooing.client.Utils.WARN_COLOR;
 import static com.awoly.awooing.client.Utils.configureSsl;
@@ -31,6 +32,8 @@ import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.lit
 import com.awoly.awooing.client.Awooing;
 import com.awoly.awooing.client.ChatClient;
 import com.awoly.awooing.client.ChatRoom;
+import com.awoly.awooing.client.emoji.Emoji;
+import com.awoly.awooing.client.emoji.EmojiRegistry;
 import com.awoly.awooing.common.CommonUtils;
 import com.awoly.awooing.common.Packet;
 import com.awoly.awooing.common.RoomAccessMode;
@@ -39,11 +42,13 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
+import net.minecraft.text.MutableText;
 import net.minecraft.registry.RegistryWrapper.WrapperLookup;
 
 public class AwooCommand {
@@ -112,6 +117,7 @@ public class AwooCommand {
                 .then(argument("username", word()).suggests(suggestUsers())
                     .executes(ctx -> op(getString(ctx, "username")))))
             .then(literal("autoconnect").executes(ctx -> toggleAutoConnect()))
+            .then(literal("emojis").executes(ctx -> listEmojis()))
             .then(literal("disconnect").executes(ctx -> disconnect()))
             .then(literal("leave")
                 .executes(ctx -> leaveRoom(null))
@@ -274,6 +280,26 @@ public class AwooCommand {
             renderMsg(INFO_COLOR, "Disconnecting error. Check logs for details");
         }
 
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int listEmojis() {
+        List<Emoji> emojis = EmojiRegistry.getAll().values().stream()
+            .sorted(Comparator.comparingInt(Emoji::getInternalId))
+            .toList();
+
+        if (emojis.isEmpty()) {
+            renderMsg(INFO_COLOR, "No emojis are currently registered");
+            return Command.SINGLE_SUCCESS;
+        }
+
+        MutableText message = text("Available emojis (" + emojis.size() + "): ");
+        for (Emoji emoji : emojis) {
+            message.append(text(new String(Character.toChars(emoji.getInternalId())))
+                .styled(style -> style.withFont(EMOJI_GLYPH_FONT)));
+        }
+
+        renderMsg(INFO_COLOR, message);
         return Command.SINGLE_SUCCESS;
     }
 
