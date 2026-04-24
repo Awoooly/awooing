@@ -2,6 +2,7 @@ package com.awoly.awooing.client.command;
 
 import static com.awoly.awooing.client.Awooing.LOGGER;
 import static com.awoly.awooing.client.Utils.INFO_COLOR;
+import static com.awoly.awooing.client.Utils.WARN_COLOR;
 import static com.awoly.awooing.client.Utils.configureSsl;
 import static com.awoly.awooing.client.Utils.getActiveRoomId;
 import static com.awoly.awooing.client.Utils.getLedRoomIds;
@@ -35,14 +36,19 @@ import com.awoly.awooing.common.Packet;
 import com.awoly.awooing.common.RoomAccessMode;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.registry.RegistryWrapper.WrapperLookup;
 
 public class AwooCommand {
+
+    private static final Map<String, Integer> ANNOUNCE_COLORS = Map.of("INFO", INFO_COLOR, "WARN", WARN_COLOR);
 
     public static void register(CommandDispatcher<FabricClientCommandSource> dispatcher, WrapperLookup registryAccess) {
         dispatcher.register(literal("awoo").executes(ctx -> {
@@ -94,6 +100,12 @@ public class AwooCommand {
             .then(literal("online")
                 .requires(ctx -> isAdmin())
                 .executes(ctx -> requestStatus()))
+            .then(literal("announce")
+                .requires(ctx -> isAdmin())
+                .executes(ctx -> showUsage("/awoo announce <color> <msg>"))
+                .then(argument("color", word()).suggests(suggestAnnouncementColors())
+                    .then(argument("announcement", greedyString())
+                        .executes(ctx -> announce(getString(ctx, "color"), getString(ctx, "announcement"))))))
             .then(literal("autoconnect").executes(ctx -> toggleAutoConnect()))
             .then(literal("disconnect").executes(ctx -> disconnect()))
             .then(literal("leave")
@@ -155,6 +167,51 @@ public class AwooCommand {
 
         Awooing.getInstance().chatClient.sendPacket(Packet.reqOnlineCount());
         return Command.SINGLE_SUCCESS;
+    }
+
+    private static int announce(String colorArg, String msg) {
+        if (!requireConnected()) {
+            return Command.SINGLE_SUCCESS;
+        }
+
+        int color;
+        if (colorArg == null || colorArg.isBlank()) {
+            renderMsg(INFO_COLOR, "Invalid color. Expected HEX format like (#)RRGGBB or INFO");
+            return Command.SINGLE_SUCCESS;
+        }
+
+        Integer namedColor = ANNOUNCE_COLORS.get(colorArg.toUpperCase(Locale.ROOT));
+        if (namedColor != null) {
+            color = namedColor;
+        } else {
+            String hex = colorArg.startsWith("#") ? colorArg.substring(1) : colorArg;
+            try {
+                color = Integer.parseInt(hex, 16);
+            } catch (NumberFormatException e) {
+                renderMsg(INFO_COLOR, "Invalid color. Expected HEX format like (#)RRGGBB or INFO");
+                return Command.SINGLE_SUCCESS;
+            }
+        }
+
+        if (msg == null || msg.isBlank()) {
+            renderMsg(INFO_COLOR, "Announcement message is required");
+            return Command.SINGLE_SUCCESS;
+        }
+
+        Awooing.getInstance().chatClient.sendPacket(Packet.announcement(msg, color));
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static SuggestionProvider<FabricClientCommandSource> suggestAnnouncementColors() {
+        return (ctx, builder) -> {
+            String remaining = builder.getRemaining().toUpperCase(Locale.ROOT);
+            for (String suggestion : ANNOUNCE_COLORS.keySet()) {
+                if (suggestion.startsWith(remaining)) {
+                    builder.suggest(suggestion);
+                }
+            }
+            return builder.buildFuture();
+        };
     }
 
     private static int list(String roomId) {

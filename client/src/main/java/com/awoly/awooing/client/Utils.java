@@ -38,6 +38,7 @@ public class Utils {
     public static final int INFO_COLOR = 0xFCFC00;
     public static final int CHAT_COLOR = 0xA8A9FB;
     public static final int PRIVATE_COLOR = 0xFC7DFC;
+    public static final int WARN_COLOR = 0xFC465C;
     public static final int WHITE = 0xFFFFFF;
     public static final Font EMOJI_FONT = new StyleSpriteSource.Font(Identifier.of("awooing", "emoji_font"));
     public static final Font EMOJI_GLYPH_FONT = new StyleSpriteSource.Font(

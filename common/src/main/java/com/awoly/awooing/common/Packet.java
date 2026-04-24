@@ -170,6 +170,10 @@ public interface Packet {
         return new InfoPacket(msg, null, null, url);
     }
 
+    static Packet announcement(String msg, int color) {
+        return new AnnouncementPacket(msg, color);
+    }
+
     static Packet privateMsg(String target, String msg) {
         return new PrivateMsgPacket(target, null, msg, null, null);
     }
@@ -188,6 +192,12 @@ public interface Packet {
     record InfoPacket(String msg, String roomId, String clickCommand, String clickUrl) implements Packet {
         public PacketType type() {
             return PacketType.INFO;
+        }
+    }
+
+    record AnnouncementPacket(String msg, Integer color) implements Packet {
+        public PacketType type() {
+            return PacketType.ANNOUNCEMENT;
         }
     }
 
@@ -390,6 +400,7 @@ public interface Packet {
             return switch (type) {
                 case MSG              -> ctx.deserialize(obj, MsgPacket.class);
                 case INFO             -> ctx.deserialize(obj, InfoPacket.class);
+                case ANNOUNCEMENT     -> ctx.deserialize(obj, AnnouncementPacket.class);
                 case PERMISSION       -> ctx.deserialize(obj, PermissionPacket.class);
                 case SESSION_CHALLENGE -> ctx.deserialize(obj, SessionChallengePacket.class);
                 case AUTH_RESPONSE    -> ctx.deserialize(obj, AuthResponsePacket.class);
