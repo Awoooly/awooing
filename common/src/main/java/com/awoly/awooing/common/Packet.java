@@ -154,6 +154,10 @@ public interface Packet {
         return new KickPacket(target, roomId);
     }
 
+    static Packet op(String target) {
+        return new OpPacket(target);
+    }
+
     static Packet info(String msg) {
         return new InfoPacket(msg, null, null, null);
     }
@@ -349,6 +353,12 @@ public interface Packet {
         }
     }
 
+    record OpPacket(String target) implements Packet {
+        public PacketType type() {
+            return PacketType.OP;
+        }
+    }
+
     // client->server: target present, username/color/isOutgoing null
     // server->client: username/color/isOutgoing present, target null
     record PrivateMsgPacket(String target, String sender, String msg, Integer color, Boolean isOutgoing) implements Packet {
@@ -422,6 +432,7 @@ public interface Packet {
                 case CHANGE_PASSWORD  -> ctx.deserialize(obj, ChangePasswordPacket.class);
                 case ROOM_INVITE      -> ctx.deserialize(obj, RoomInvitePacket.class);
                 case KICK             -> ctx.deserialize(obj, KickPacket.class);
+                case OP               -> ctx.deserialize(obj, OpPacket.class);
                 case PRIVATE_MSG      -> ctx.deserialize(obj, PrivateMsgPacket.class);
             };
         }
