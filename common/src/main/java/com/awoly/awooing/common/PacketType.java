@@ -3,6 +3,7 @@ package com.awoly.awooing.common;
 public enum PacketType {
     MSG("msg"),
     INFO("info"),
+    ANNOUNCEMENT("announcement"),
     PERMISSION("permission"),
     SESSION_CHALLENGE("session_challenge"),
     AUTH_RESPONSE("auth_response"),
