@@ -8,6 +8,7 @@ import static com.awoly.awooing.client.Utils.getLedRoomIds;
 import static com.awoly.awooing.client.Utils.getUsername;
 import static com.awoly.awooing.client.Utils.getVersion;
 import static com.awoly.awooing.client.Utils.isClientConnected;
+import static com.awoly.awooing.client.Utils.isAdmin;
 import static com.awoly.awooing.client.Utils.renderMsg;
 import static com.awoly.awooing.client.Utils.showUsage;
 import static com.awoly.awooing.client.Utils.suggestLedRoomUsers;
@@ -90,6 +91,9 @@ public class AwooCommand {
                 .executes(ctx -> list(null))
                 .then(argument("room", word()).suggests(suggestRooms())
                     .executes(ctx -> list(getString(ctx, "room")))))
+            .then(literal("online")
+                .requires(ctx -> isAdmin())
+                .executes(ctx -> requestStatus()))
             .then(literal("autoconnect").executes(ctx -> toggleAutoConnect()))
             .then(literal("disconnect").executes(ctx -> disconnect()))
             .then(literal("leave")
@@ -141,6 +145,15 @@ public class AwooCommand {
         config.autoConnect = !config.autoConnect;
         save();
         renderMsg(INFO_COLOR, "Autoconnect " + (config.autoConnect ? "enabled" : "disabled"));
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int requestStatus() {
+        if (!requireConnected()) {
+            return Command.SINGLE_SUCCESS;
+        }
+
+        Awooing.getInstance().chatClient.sendPacket(Packet.reqOnlineCount());
         return Command.SINGLE_SUCCESS;
     }
 

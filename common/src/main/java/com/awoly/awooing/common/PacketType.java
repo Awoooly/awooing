@@ -18,6 +18,7 @@ public enum PacketType {
     FORWARD_LIST("forward_list"),
     FORWARD_IS_ALLOWED("forward_is_allowed"),
     FORWARD_REQUEST("forward_request"),
+    ONLINE_COUNT("online_count"),
     CHANGE_COLOR("change_color"),
     CHANGE_PRIVACY("change_privacy"),
     CHANGE_PASSWORD("change_password"),

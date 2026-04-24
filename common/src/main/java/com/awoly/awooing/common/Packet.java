@@ -130,6 +130,14 @@ public interface Packet {
         return new ForwardRequestPacket(target);
     }
 
+    static Packet reqOnlineCount() {
+        return new OnlineCountPacket(null);
+    }
+
+    static Packet onlineCount(int count) {
+        return new OnlineCountPacket(count);
+    }
+
     static Packet reqForwardList() {
         return new ForwardListPacket();
     }
@@ -293,6 +301,13 @@ public interface Packet {
         }
     }
 
+    // count is null on request, present on response
+    record OnlineCountPacket(Integer count) implements Packet {
+        public PacketType type() {
+            return PacketType.ONLINE_COUNT;
+        }
+    }
+
     // username null on client->server, present on server->client
     record ChangeColorPacket(String username, Integer color) implements Packet {
         public PacketType type() {
@@ -390,6 +405,7 @@ public interface Packet {
                 case FORWARD_LIST     -> ctx.deserialize(obj, ForwardListPacket.class);
                 case FORWARD_IS_ALLOWED -> ctx.deserialize(obj, ForwardIsAllowedPacket.class);
                 case FORWARD_REQUEST  -> ctx.deserialize(obj, ForwardRequestPacket.class);
+                case ONLINE_COUNT           -> ctx.deserialize(obj, OnlineCountPacket.class);
                 case CHANGE_COLOR     -> ctx.deserialize(obj, ChangeColorPacket.class);
                 case CHANGE_PRIVACY   -> ctx.deserialize(obj, ChangePrivacyPacket.class);
                 case CHANGE_PASSWORD  -> ctx.deserialize(obj, ChangePasswordPacket.class);

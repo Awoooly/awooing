@@ -5,6 +5,7 @@ import static com.awoly.awooing.client.Awooing.getInstance;
 // joinedRooms accessed via Awooing.getInstance().chatClient.getJoinedRooms()
 
 import com.awoly.awooing.common.RoomAccessMode;
+import com.awoly.awooing.common.PermissionType;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.Suggestions;
@@ -107,6 +108,10 @@ public class Utils {
 
     public static boolean isClientConnected() {
         return getInstance().chatClient != null && getInstance().chatClient.isOpen();
+    }
+
+    public static boolean isAdmin() {
+        return getInstance().permissionType == PermissionType.ADMIN;
     }
 
     public static boolean isLeaderInAnyJoinedRoom() {
