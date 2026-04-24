@@ -13,9 +13,11 @@ import com.awoly.awooing.client.handlers.AuthenticationHandlers;
 import com.awoly.awooing.client.handlers.DirectMessageHandlers;
 import com.awoly.awooing.client.handlers.ForwardingHandlers;
 import com.awoly.awooing.client.handlers.InfoHandlers;
+import com.awoly.awooing.client.handlers.PermissionHandlers;
 import com.awoly.awooing.client.handlers.RoomHandlers;
 import com.awoly.awooing.client.handlers.UserHandlers;
 import com.awoly.awooing.common.Packet;
+import com.awoly.awooing.common.PermissionType;
 import java.net.ConnectException;
 import java.net.URI;
 import java.net.UnknownHostException;
@@ -39,6 +41,7 @@ public class ChatClient extends WebSocketClient {
     private final UserHandlers userHandlers = new UserHandlers();
     private final ForwardingHandlers forwardingHandlers = new ForwardingHandlers();
     private final InfoHandlers infoHandlers = new InfoHandlers();
+    private final PermissionHandlers permissionHandlers = new PermissionHandlers();
     private final AuthenticationHandlers authenticationHandlers = new AuthenticationHandlers(this, PROTOCOL_VERSION);
     private final DirectMessageHandlers directMessageHandlers = new DirectMessageHandlers();
 
@@ -55,6 +58,7 @@ public class ChatClient extends WebSocketClient {
         registerHandler(Packet.ForwardMsgPacket.class, forwardingHandlers::handleForwardMsg);
         registerHandler(Packet.ForwardIsAllowedPacket.class, forwardingHandlers::handleForwardIsAllowed);
         registerHandler(Packet.InfoPacket.class, infoHandlers::handleInfo);
+        registerHandler(Packet.PermissionPacket.class, permissionHandlers::handlePermission);
         registerHandler(Packet.SessionChallengePacket.class, authenticationHandlers::handleSessionChallenge);
         registerHandler(Packet.PrivateMsgPacket.class, directMessageHandlers::handlePrivateMsg);
     }
@@ -94,6 +98,7 @@ public class ChatClient extends WebSocketClient {
         LOGGER.debug("Connection closed: {} ({})", reason, code);
         joinedRooms.clear();
         Awooing.getInstance().currentRoomId = null;
+        Awooing.getInstance().permissionType = PermissionType.USER;
         setAwooing(false);
 
         switch (code) {

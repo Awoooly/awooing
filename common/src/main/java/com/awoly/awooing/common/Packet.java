@@ -39,6 +39,14 @@ public interface Packet {
         return new SessionChallengePacket(serverId);
     }
 
+    static Packet permissions(PermissionType permissionType) {
+        return new PermissionPacket(permissionType, null);
+    }
+
+    static Packet permissions(PermissionType permissionType, String message) {
+        return new PermissionPacket(permissionType, message);
+    }
+
     static Packet authResponse(String username, int color, int protocolVersion, int clientVersion) {
         return new AuthResponsePacket(username, color, protocolVersion, clientVersion);
     }
@@ -178,6 +186,13 @@ public interface Packet {
     record SessionChallengePacket(String serverId) implements Packet {
         public PacketType type() {
             return PacketType.SESSION_CHALLENGE;
+        }
+    }
+
+    // message is optional and can be displayed by the client when present
+    record PermissionPacket(PermissionType permissionType, String message) implements Packet {
+        public PacketType type() {
+            return PacketType.PERMISSION;
         }
     }
 
@@ -360,6 +375,7 @@ public interface Packet {
             return switch (type) {
                 case MSG              -> ctx.deserialize(obj, MsgPacket.class);
                 case INFO             -> ctx.deserialize(obj, InfoPacket.class);
+                case PERMISSION       -> ctx.deserialize(obj, PermissionPacket.class);
                 case SESSION_CHALLENGE -> ctx.deserialize(obj, SessionChallengePacket.class);
                 case AUTH_RESPONSE    -> ctx.deserialize(obj, AuthResponsePacket.class);
                 case ROOM_CREATE      -> ctx.deserialize(obj, RoomCreatePacket.class);
