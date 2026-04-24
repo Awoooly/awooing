@@ -9,6 +9,7 @@ import com.awoly.awooing.client.config.ConfigManager;
 import com.awoly.awooing.client.emoji.EmojiRegistry;
 import com.awoly.awooing.client.event.ChatListener;
 import com.awoly.awooing.client.event.CommandListener;
+import com.awoly.awooing.common.PermissionType;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import org.slf4j.Logger;
@@ -19,6 +20,7 @@ public class Awooing implements ClientModInitializer {
     private static Awooing INSTANCE;
     public ChatClient chatClient;
     public boolean isAwooing;
+    public PermissionType permissionType = PermissionType.USER;
     public String forwardAs;
     public String lastPrivateSender;
     public String currentRoomId;

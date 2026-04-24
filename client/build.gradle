@@ -64,8 +64,9 @@ dependencies {
     def resourcefulJar = rootProject.file("devlibs/ResourcefulConfig-fabric-${project.resourceful_version}.jar")
 
     if (authMeJar.exists() && resourcefulJar.exists()) {
-        modCompileOnly(files(authMeJar))
-        modCompileOnly(files(resourcefulJar))
+        modLocalRuntime(files(authMeJar))
+        modLocalRuntime(files(resourcefulJar))
+        implementation 'org.apache.httpcomponents:httpclient:4.5.14'
     }
 }
 
