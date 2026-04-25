@@ -49,14 +49,21 @@ public class Utils {
 
     public static void renderMsg(String prefix, TextColor color, Text message) {
         MinecraftClient.getInstance().execute(() -> {
+            String normalizedPrefix = (prefix == null || prefix.isBlank()) ? null : prefix;
             if (MinecraftClient.getInstance().player == null) {
-                LOGGER.info("[{}] {}", prefix, message.getString());
+                if (normalizedPrefix == null) {
+                    LOGGER.info("{}", message.getString());
+                } else {
+                    LOGGER.info("[{}] {}", normalizedPrefix, message.getString());
+                }
                 return;
             }
 
-            Text transformed = Text.literal("[" + prefix + "] ")
-                .setStyle(Style.EMPTY.withFont(EMOJI_FONT).withColor(color))
-                .append(message);
+            Text transformed = normalizedPrefix == null
+                ? message.copy().setStyle(message.getStyle().withColor(color))
+                : Text.literal("[" + normalizedPrefix + "] ")
+                    .setStyle(Style.EMPTY.withFont(EMOJI_FONT).withColor(color))
+                    .append(message);
 
             MinecraftClient.getInstance().player.sendMessage(transformed, false);
         });
