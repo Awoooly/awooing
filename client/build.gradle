@@ -38,12 +38,12 @@ shadowJar {
     relocate 'org.java_websocket', 'com.awoly.libs.java_websocket'
 }
 
-version = project.mod_version
+version = "${project.mod_version}+${project.minecraft_version}"
 group = project.maven_group
 
 base {
-    // Append Minecraft version as a suffix so builds include the game version.
-    archivesName = "${project.archives_base_name}+${project.minecraft_version}"
+    // Final artifact format: awooing-version+minecraftversion
+    archivesName = 'awooing'
 }
 
 repositories {
