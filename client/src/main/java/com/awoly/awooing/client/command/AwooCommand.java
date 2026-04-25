@@ -60,6 +60,7 @@ public class AwooCommand {
             renderMsg(INFO_COLOR, "v" + getVersion());
             return Command.SINGLE_SUCCESS;
         })
+            .then(literal("status").executes(ctx -> status()))
             .then(literal("connect").executes(ctx -> connectToHost(config.lastIp, config.lastPort)))
             .then(literal("changeip")
                 .executes(ctx -> showUsage("/awoo changeip <IP> [Port]"))
@@ -161,6 +162,47 @@ public class AwooCommand {
         }
         save();
         renderMsg(INFO_COLOR, "Server set to " + config.lastIp + ":" + config.lastPort);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int status() {
+        Awooing instance = Awooing.getInstance();
+        ChatClient chatClient = instance.chatClient;
+        boolean connected = isClientConnected();
+
+        String endpoint = "unavailable";
+        if (connected && chatClient != null && chatClient.getURI() != null) {
+            URI uri = chatClient.getURI();
+            if (uri.getHost() != null && uri.getPort() >= 0) {
+                endpoint = uri.getHost() + ":" + uri.getPort();
+            } else {
+                endpoint = uri.toString();
+            }
+        }
+
+        List<String> joinedRoomIds = chatClient == null
+            ? List.of()
+            : chatClient.getJoinedRooms().values().stream()
+                .map(ChatRoom::getName)
+                .sorted()
+                .toList();
+
+        List<String> ledRoomIds = getLedRoomIds();
+        String activeRoomId = getActiveRoomId();
+
+        renderMsg(INFO_COLOR, "Status:");
+        renderMsg(null, INFO_COLOR, "- Connected: " + (connected ? "Yes (" + endpoint + ")" : "No"));
+        renderMsg(null, INFO_COLOR,
+            "- Joined rooms (" + joinedRoomIds.size() + "): "
+                + (joinedRoomIds.isEmpty() ? "None" : String.join(", ", joinedRoomIds)));
+        renderMsg(null, INFO_COLOR,
+            "- Led rooms (" + ledRoomIds.size() + "): "
+                + (ledRoomIds.isEmpty() ? "None" : String.join(", ", ledRoomIds)));
+        renderMsg(null, INFO_COLOR, "- Active room: " + (activeRoomId == null ? "None" : activeRoomId));
+        renderMsg(null, INFO_COLOR, "- Awooing: " + (instance.isAwooing ? "Yes (" + activeRoomId + ")" : "No"));
+        renderMsg(null, INFO_COLOR, "- Autoconnect: " + (config.autoConnect ? "Enabled" : "Disabled"));
+        renderMsg(null, INFO_COLOR, "- Version: " + getVersion());
+
         return Command.SINGLE_SUCCESS;
     }
 
