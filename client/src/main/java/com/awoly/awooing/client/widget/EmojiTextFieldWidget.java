@@ -1,8 +1,9 @@
 package com.awoly.awooing.client.widget;
 
 import com.awoly.awooing.client.Utils;
-import com.awoly.awooing.client.emoji.Emoji;
-import com.awoly.awooing.client.emoji.EmojiRegistry;
+import com.awoly.awooing.client.sprite.Sprite;
+import com.awoly.awooing.client.sprite.SpriteRegistry;
+
 import java.util.regex.Matcher;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.widget.TextFieldWidget;
@@ -40,7 +41,7 @@ public class EmojiTextFieldWidget extends TextFieldWidget {
                 Matcher matcher = Utils.EMOJI_PATTERN.matcher(text);
                 while (matcher.find()) {
                     String name = matcher.group(1);
-                    if (EmojiRegistry.get(name) != null) {
+                    if (SpriteRegistry.getByName(name) != null) {
                         int tokenStart = matcher.start();
                         int tokenEnd = matcher.end();
                         if (cursor > tokenStart && cursor < tokenEnd) {
@@ -67,7 +68,7 @@ public class EmojiTextFieldWidget extends TextFieldWidget {
             if (isBackspace || isDelete) {
                 Matcher matcher = Utils.EMOJI_PATTERN.matcher(text);
                 while (matcher.find()) {
-                    if (EmojiRegistry.get(matcher.group(1)) != null) {
+                    if (SpriteRegistry.getByName(matcher.group(1)) != null) {
                         if (isBackspace && matcher.end() == cursor) {
                             setText(text.substring(0, matcher.start()) + text.substring(matcher.end()));
                             super.setCursor(matcher.start(), false);
@@ -93,7 +94,7 @@ public class EmojiTextFieldWidget extends TextFieldWidget {
         float[] width = {0f};
         text.accept((index, style, codePoint) -> {
             if (Utils.isEmojiGlyphStyled(style)) {
-                Emoji emoji = EmojiRegistry.getById(codePoint);
+                Sprite emoji = SpriteRegistry.getById(codePoint);
                 if (emoji != null) {
                     width[0] += emoji.getOrCreateGlyph().getMetrics().getAdvance();
                     return true;
@@ -121,7 +122,7 @@ public class EmojiTextFieldWidget extends TextFieldWidget {
                 }
                 if (j < str.length() && str.charAt(j) == ':' && j > i + 1) {
                     String name = str.substring(i + 1, j);
-                    Emoji emoji = EmojiRegistry.get(name);
+                    Sprite emoji = SpriteRegistry.getByName(name);
                     if (emoji != null) {
                         width += emoji.getOrCreateGlyph().getMetrics().getAdvance();
                         i = j + 1;
@@ -148,7 +149,7 @@ public class EmojiTextFieldWidget extends TextFieldWidget {
                 }
                 if (j < str.length() && str.charAt(j) == ':' && j > i + 1) {
                     String name = str.substring(i + 1, j);
-                    Emoji emoji = EmojiRegistry.get(name);
+                    Sprite emoji = SpriteRegistry.getByName(name);
                     if (emoji != null) {
                         float emojiWidth = emoji.getOrCreateGlyph().getMetrics().getAdvance();
                         if (width + emojiWidth > maxWidth) {

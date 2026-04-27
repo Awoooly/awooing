@@ -1,9 +1,10 @@
 package com.awoly.awooing.client.mixin;
 
 import com.awoly.awooing.client.Utils;
-import com.awoly.awooing.client.emoji.Emoji;
-import com.awoly.awooing.client.emoji.EmojiRegistry;
-import com.awoly.awooing.client.emoji.EmojiSubstitutingText;
+import com.awoly.awooing.client.sprite.Sprite;
+import com.awoly.awooing.client.sprite.SpriteRegistry;
+import com.awoly.awooing.client.sprite.SpriteSubstitutingText;
+
 import net.minecraft.client.font.BakedGlyph;
 import net.minecraft.client.font.TextHandler;
 import net.minecraft.client.font.TextRenderer;
@@ -25,10 +26,10 @@ public abstract class TextRendererMixin {
             cancellable = true)
     private void wrapPrepare(OrderedText text, float x, float y, int color, boolean shadow, boolean trackEmpty,
             int backgroundColor, CallbackInfoReturnable<TextRenderer.GlyphDrawable> cir) {
-        if (text instanceof EmojiSubstitutingText) {
+        if (text instanceof SpriteSubstitutingText) {
             return;
         }
-        if (EmojiRegistry.getAll().isEmpty()) {
+        if (SpriteRegistry.getAll().isEmpty()) {
             return;
         }
         if (!hasEmojiFont(text)) {
@@ -36,7 +37,7 @@ public abstract class TextRendererMixin {
         }
         cir.setReturnValue(
                 ((TextRenderer) (Object) this)
-                        .prepare(new EmojiSubstitutingText(text), x, y, color, shadow, trackEmpty, backgroundColor));
+                        .prepare(new SpriteSubstitutingText(text), x, y, color, shadow, trackEmpty, backgroundColor));
     }
 
     private static boolean hasEmojiFont(OrderedText text) {
@@ -61,7 +62,7 @@ public abstract class TextRendererMixin {
             return;
         }
 
-        Emoji emoji = EmojiRegistry.getById(codePoint);
+        Sprite emoji = SpriteRegistry.getById(codePoint);
         if (emoji != null) {
             cir.setReturnValue(emoji.getOrCreateGlyph());
         }
@@ -84,7 +85,7 @@ public abstract class TextRendererMixin {
                 return original.getWidth(codePoint, style);
             }
 
-            Emoji emoji = EmojiRegistry.getById(codePoint);
+            Sprite emoji = SpriteRegistry.getById(codePoint);
             if (emoji != null) {
                 return emoji.getOrCreateGlyph().getMetrics().getAdvance();
             }

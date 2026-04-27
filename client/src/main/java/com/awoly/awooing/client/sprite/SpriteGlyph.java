@@ -1,4 +1,4 @@
-package com.awoly.awooing.client.emoji;
+package com.awoly.awooing.client.sprite;
 
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.textures.GpuTextureView;
@@ -13,27 +13,29 @@ import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.text.Style;
 import org.joml.Matrix4f;
 
-public final class EmojiGlyph implements BakedGlyph {
+public final class SpriteGlyph implements BakedGlyph {
 
-    private static final float TARGET_HEIGHT = 9f;
-
-    private final Emoji emoji;
+    private final Sprite emoji;
     private final float width;
     private final float height;
     private final GlyphMetrics metrics;
 
-    public EmojiGlyph(Emoji emoji) {
+    public SpriteGlyph(Sprite emoji, float height) {
         this.emoji = emoji;
 
         int imgW = emoji.getWidth();
         int imgH = emoji.getHeight();
 
-        float scale = TARGET_HEIGHT / (float) imgH;
+        float scale = height / (float) imgH;
 
-        this.height = TARGET_HEIGHT;
+        this.height = height;
         this.width = imgW * scale;
 
         this.metrics = GlyphMetrics.empty(width);
+    }
+
+    public SpriteGlyph(Sprite emoji) {
+        this(emoji, Sprite.DEFAULT_GLYPH_HEIGHT);
     }
 
     @Override
@@ -46,7 +48,7 @@ public final class EmojiGlyph implements BakedGlyph {
             float shadowOffset) {
         final float fx = x;
         final float fy = y;
-        final Style fstyle = style;
+        final Style fstyle = style.withParent(emoji.getStyle());
         return new TextDrawable.DrawnGlyphRect() {
             @Override
             public Style style() {
