@@ -1,8 +1,8 @@
 package com.awoly.awooing.client.mixin;
 
 import com.awoly.awooing.client.Utils;
-import com.awoly.awooing.client.emoji.EmojiSubstitutingText;
-import com.awoly.awooing.client.emoji.EmojiSubstitutingVisitable;
+import com.awoly.awooing.client.sprite.SpriteSubstitutingText;
+import com.awoly.awooing.client.sprite.SpriteSubstitutingVisitable;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.minecraft.client.font.TextHandler;
@@ -29,7 +29,7 @@ public abstract class TextHandlerMixin {
         if (!text.getString().contains(":")) {
             return text;
         }
-        return new EmojiSubstitutingVisitable(text);
+        return new SpriteSubstitutingVisitable(text);
     }
 
     /** Uses emoji substitution when resolving the style under the chat hover cursor. */
@@ -42,8 +42,6 @@ public abstract class TextHandlerMixin {
         net.minecraft.text.CharacterVisitor visitor,
         Operation<Boolean> original) {
         final boolean[] hasCandidate = {false};
-        
-        // 1. Check for emoji candidates
         text.accept((index, style, codePoint) -> {
             if (Utils.isEmojiGlyphStyled(style) || codePoint == ':') {
                 hasCandidate[0] = true;
@@ -57,10 +55,10 @@ public abstract class TextHandlerMixin {
         }
 
         OrderedText marked = v -> text.accept((index, style, codePoint) -> {
-            Style s = Utils.isEmojiGlyphStyled(style) ? style.withFont(Utils.EMOJI_FONT) : style;
+            Style s = Utils.isEmojiGlyphStyled(style) ? style.withFont(Utils.SPRITE_FONT) : style;
             return v.accept(index, s, codePoint);
         });
 
-        return original.call(new EmojiSubstitutingText(marked), visitor);
+        return original.call(new SpriteSubstitutingText(marked), visitor);
     }
 }
