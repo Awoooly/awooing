@@ -40,8 +40,8 @@ public class Utils {
     public static final int PRIVATE_COLOR = 0xFC7DFC;
     public static final int WARN_COLOR = 0xFC465C;
     public static final int WHITE = 0xFFFFFF;
-    public static final Font EMOJI_FONT = new StyleSpriteSource.Font(Identifier.of("awooing", "emoji_font"));
-    public static final Font EMOJI_GLYPH_FONT = new StyleSpriteSource.Font(
+    public static final Font SPRITE_FONT = new StyleSpriteSource.Font(Identifier.of("awooing", "emoji_font"));
+    public static final Font SPRITE_GLYPH_FONT = new StyleSpriteSource.Font(
             Identifier.of("awooing", "emoji_glyph_font"));
     public static final Pattern EMOJI_PATTERN = Pattern.compile(":([a-z0-9_]+):");
 
@@ -62,7 +62,7 @@ public class Utils {
             Text transformed = normalizedPrefix == null
                 ? message.copy().setStyle(message.getStyle().withColor(color))
                 : Text.literal("[" + normalizedPrefix + "] ")
-                    .setStyle(Style.EMPTY.withFont(EMOJI_FONT).withColor(color))
+                    .setStyle(Style.EMPTY.withFont(SPRITE_FONT).withColor(color))
                     .append(message);
 
             MinecraftClient.getInstance().player.sendMessage(transformed, false);
@@ -314,11 +314,11 @@ public class Utils {
     }
 
     public static boolean isEmojiStyled(Style style) {
-        return EMOJI_FONT.equals(style.getFont());
+        return SPRITE_FONT.equals(style.getFont());
     }
 
     public static boolean isEmojiGlyphStyled(Style style) {
-        return EMOJI_GLYPH_FONT.equals(style.getFont());
+        return SPRITE_GLYPH_FONT.equals(style.getFont());
     }
 
     public static boolean isTypingAwooMessage(String string) {

@@ -1,25 +1,18 @@
-package com.awoly.awooing.client.emoji;
-
-import static com.awoly.awooing.client.Utils.EMOJI_GLYPH_FONT;
-import static com.awoly.awooing.client.Utils.text;
+package com.awoly.awooing.client.sprite;
 
 import com.awoly.awooing.client.Utils;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.text.CharacterVisitor;
-import net.minecraft.text.HoverEvent;
-import net.minecraft.text.MutableText;
 import net.minecraft.text.OrderedText;
 import net.minecraft.text.Style;
 import net.minecraft.text.StyleSpriteSource.Font;
-import net.minecraft.util.Formatting;
- 
 
-public final class EmojiSubstitutingText implements OrderedText {
+public final class SpriteSubstitutingText implements OrderedText {
 
     private final OrderedText delegate;
 
-    public EmojiSubstitutingText(OrderedText delegate) {
+    public SpriteSubstitutingText(OrderedText delegate) {
         this.delegate = delegate;
     }
 
@@ -42,7 +35,7 @@ public final class EmojiSubstitutingText implements OrderedText {
             Style style = styles.get(i);
 
             if (Utils.isEmojiGlyphStyled(style)) {
-                Emoji emoji = EmojiRegistry.getById(cp);
+                Sprite emoji = SpriteRegistry.getById(cp);
                 if (emoji == null) {
                     if (!visitor.accept(outIndex++, style, cp)) {
                         return false;
@@ -51,23 +44,16 @@ public final class EmojiSubstitutingText implements OrderedText {
                     continue;
                 }
 
-                Style emojiStyle = style
-                    .withHoverEvent(new HoverEvent.ShowText(buildHoverText(emoji)))
-                    .withColor(Utils.INFO_COLOR);
-                if (!visitor.accept(outIndex++, emojiStyle, cp)) {
+                if (!visitor.accept(outIndex++, emoji.getStyle(), emoji.getInternalId())) {
                     return false;
                 }
                 i++;
                 continue;
             }
 
-            Emoji existingEmoji = EmojiRegistry.getById(cp);
+            Sprite existingEmoji = SpriteRegistry.getById(cp);
             if (existingEmoji != null) {
-                Style emojiStyle = Style.EMPTY
-                    .withFont(Utils.EMOJI_GLYPH_FONT)
-                    .withHoverEvent(new HoverEvent.ShowText(buildHoverText(existingEmoji)))
-                    .withColor(Utils.INFO_COLOR);
-                if (!visitor.accept(outIndex++, emojiStyle, cp)) {
+                if (!visitor.accept(outIndex++, existingEmoji.getStyle(), existingEmoji.getInternalId())) {
                     return false;
                 }
                 i++;
@@ -105,11 +91,9 @@ public final class EmojiSubstitutingText implements OrderedText {
                     name.appendCodePoint(codePoints.get(k)[0]);
                 }
 
-                Emoji emoji = EmojiRegistry.get(name.toString());
+                Sprite emoji = SpriteRegistry.getByName(name.toString());
                 if (emoji != null) {
-                    Style emojiStyle = style.withFont(EMOJI_GLYPH_FONT)
-                            .withHoverEvent(new HoverEvent.ShowText(buildHoverText(emoji)));
-                    if (!visitor.accept(outIndex++, emojiStyle, emoji.getInternalId())) {
+                    if (!visitor.accept(outIndex++, emoji.getStyle(), emoji.getInternalId())) {
                         return false;
                     }
                     i = j + 1;
@@ -135,11 +119,5 @@ public final class EmojiSubstitutingText implements OrderedText {
         }
 
         return true;
-    }
-
-    private static MutableText buildHoverText(Emoji emoji) {
-        return text(":" + emoji.getName() + ": ", Formatting.WHITE)
-            .append(text(new String(Character.toChars(emoji.getInternalId())), Utils.INFO_COLOR)
-                .styled(style -> style.withFont(EMOJI_GLYPH_FONT)));
     }
 }

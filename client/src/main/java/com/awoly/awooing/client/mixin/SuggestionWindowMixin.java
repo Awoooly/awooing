@@ -1,9 +1,9 @@
 package com.awoly.awooing.client.mixin;
 
 import com.awoly.awooing.client.Utils;
-import com.awoly.awooing.client.emoji.Emoji;
-import com.awoly.awooing.client.emoji.EmojiRegistry;
-import com.awoly.awooing.client.emoji.EmojiSubstitutingText;
+import com.awoly.awooing.client.sprite.Sprite;
+import com.awoly.awooing.client.sprite.SpriteRegistry;
+import com.awoly.awooing.client.sprite.SpriteSubstitutingText;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.mojang.brigadier.suggestion.Suggestion;
@@ -47,8 +47,8 @@ public abstract class SuggestionWindowMixin {
 
         TextRenderer tr = MinecraftClient.getInstance().textRenderer;
         OrderedText prefixOrdered = Language.getInstance()
-                .reorder(Text.literal(prefix).setStyle(Style.EMPTY.withFont(Utils.EMOJI_FONT)));
-        int correction = tr.getWidth(new EmojiSubstitutingText(prefixOrdered)) - tr.getWidth(prefix);
+                .reorder(Text.literal(prefix).setStyle(Style.EMPTY.withFont(Utils.SPRITE_FONT)));
+        int correction = tr.getWidth(new SpriteSubstitutingText(prefixOrdered)) - tr.getWidth(prefix);
 
         this.area.setX(this.area.getX() + correction);
     }
@@ -76,7 +76,7 @@ public abstract class SuggestionWindowMixin {
         }
 
         String name = text.substring(1, text.length() - 1);
-        Emoji emoji = EmojiRegistry.get(name);
+        Sprite emoji = SpriteRegistry.getByName(name);
         if (emoji == null) {
             original.call(context, textRenderer, text, x, y, color);
             return;
@@ -84,8 +84,8 @@ public abstract class SuggestionWindowMixin {
 
         // 1. Draw the emoji icon
         OrderedText emojiOnly = Language.getInstance()
-                .reorder(Text.literal(text).setStyle(Style.EMPTY.withFont(Utils.EMOJI_FONT)));
-        context.drawTextWithShadow(textRenderer, new EmojiSubstitutingText(emojiOnly), x, y, color);
+                .reorder(Text.literal(text).setStyle(Style.EMPTY.withFont(Utils.SPRITE_FONT)));
+        context.drawTextWithShadow(textRenderer, new SpriteSubstitutingText(emojiOnly), x, y, color);
 
         // 2. Draw the text label next to it
         int emojiGlyphWidth = (int) emoji.getOrCreateGlyph().getMetrics().getAdvance();
@@ -107,7 +107,7 @@ public abstract class SuggestionWindowMixin {
         int maxExtra = suggestions.stream()
             .map(Suggestion::getText)
             .filter(t -> t.startsWith(":") && t.endsWith(":") && t.length() > 2)
-            .map(t -> EmojiRegistry.get(t.substring(1, t.length() - 1)))
+            .map(t -> SpriteRegistry.getByName(t.substring(1, t.length() - 1)))
             .filter(e -> e != null)
             .mapToInt(e -> (int) e.getOrCreateGlyph().getMetrics().getAdvance() + tr.getWidth(" "))
             .max()

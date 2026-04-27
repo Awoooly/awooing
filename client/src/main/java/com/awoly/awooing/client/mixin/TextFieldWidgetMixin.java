@@ -1,9 +1,9 @@
 package com.awoly.awooing.client.mixin;
 
 import com.awoly.awooing.client.Utils;
-import com.awoly.awooing.client.emoji.Emoji;
-import com.awoly.awooing.client.emoji.EmojiRegistry;
-import com.awoly.awooing.client.emoji.EmojiSubstitutingText;
+import com.awoly.awooing.client.sprite.Sprite;
+import com.awoly.awooing.client.sprite.SpriteRegistry;
+import com.awoly.awooing.client.sprite.SpriteSubstitutingText;
 import com.awoly.awooing.client.widget.EmojiTextFieldWidget;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
@@ -37,7 +37,7 @@ public abstract class TextFieldWidgetMixin {
 
         OrderedText original = cir.getReturnValue();
         cir.setReturnValue(visitor -> original.accept(
-                (index, style, codePoint) -> visitor.accept(index, style.withFont(Utils.EMOJI_FONT), codePoint)));
+                (index, style, codePoint) -> visitor.accept(index, style.withFont(Utils.SPRITE_FONT), codePoint)));
     }
 
     /** Redirects the trimToWidth call inside renderWidget to the emoji-aware version. */
@@ -63,7 +63,7 @@ public abstract class TextFieldWidgetMixin {
         if (!((Object) this instanceof EmojiTextFieldWidget emojiWidget) || !Utils.isTypingAwooMessage(this.text)) {
             return original.call(renderer, orderedText);
         }
-        return emojiWidget.getEmojiAwareWidth(new EmojiSubstitutingText(orderedText));
+        return emojiWidget.getEmojiAwareWidth(new SpriteSubstitutingText(orderedText));
     }
 
     /**
@@ -102,7 +102,7 @@ public abstract class TextFieldWidgetMixin {
                 }
                 if (k >= 0 && text.charAt(k) == ':' && closeColon > k + 1) {
                     String name = text.substring(k + 1, closeColon);
-                    Emoji emoji = EmojiRegistry.get(name);
+                    Sprite emoji = SpriteRegistry.getByName(name);
                     if (emoji != null) {
                         float emojiWidth = emoji.getOrCreateGlyph().getMetrics().getAdvance();
                         if (width + emojiWidth > innerWidth) {

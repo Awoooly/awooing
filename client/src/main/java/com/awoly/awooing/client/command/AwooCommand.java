@@ -1,7 +1,7 @@
 package com.awoly.awooing.client.command;
 
 import static com.awoly.awooing.client.Awooing.LOGGER;
-import static com.awoly.awooing.client.Utils.EMOJI_GLYPH_FONT;
+import static com.awoly.awooing.client.Utils.SPRITE_GLYPH_FONT;
 import static com.awoly.awooing.client.Utils.INFO_COLOR;
 import static com.awoly.awooing.client.Utils.WARN_COLOR;
 import static com.awoly.awooing.client.Utils.configureSsl;
@@ -32,8 +32,8 @@ import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.lit
 import com.awoly.awooing.client.Awooing;
 import com.awoly.awooing.client.ChatClient;
 import com.awoly.awooing.client.ChatRoom;
-import com.awoly.awooing.client.emoji.Emoji;
-import com.awoly.awooing.client.emoji.EmojiRegistry;
+import com.awoly.awooing.client.sprite.Sprite;
+import com.awoly.awooing.client.sprite.SpriteRegistry;
 import com.awoly.awooing.common.CommonUtils;
 import com.awoly.awooing.common.Packet;
 import com.awoly.awooing.common.RoomAccessMode;
@@ -326,8 +326,8 @@ public class AwooCommand {
     }
 
     private static int listEmojis() {
-        List<Emoji> emojis = EmojiRegistry.getAll().values().stream()
-            .sorted(Comparator.comparingInt(Emoji::getInternalId))
+        List<Sprite> emojis = SpriteRegistry.getAll().values().stream()
+            .sorted(Comparator.comparingInt(Sprite::getInternalId))
             .toList();
 
         if (emojis.isEmpty()) {
@@ -336,9 +336,9 @@ public class AwooCommand {
         }
 
         MutableText message = text("Available emojis (" + emojis.size() + "): ");
-        for (Emoji emoji : emojis) {
+        for (Sprite emoji : emojis) {
             message.append(text(new String(Character.toChars(emoji.getInternalId())))
-                .styled(style -> style.withFont(EMOJI_GLYPH_FONT)));
+                .styled(style -> style.withFont(SPRITE_GLYPH_FONT)));
         }
 
         renderMsg(INFO_COLOR, message);

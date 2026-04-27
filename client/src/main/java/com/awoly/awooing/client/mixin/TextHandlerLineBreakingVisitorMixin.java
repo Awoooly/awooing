@@ -1,7 +1,8 @@
 package com.awoly.awooing.client.mixin;
 
 import com.awoly.awooing.client.Utils;
-import com.awoly.awooing.client.emoji.EmojiRegistry;
+import com.awoly.awooing.client.sprite.SpriteRegistry;
+
 import net.minecraft.text.Style;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -22,7 +23,7 @@ public abstract class TextHandlerLineBreakingVisitorMixin {
     /** Allows line breaking to split before an emoji glyph as a valid wrap point. */
     @Inject(method = "accept(ILnet/minecraft/text/Style;I)Z", at = @At("HEAD"))
     private void markEmojiBreakBefore(int i, Style style, int codePoint, CallbackInfoReturnable<Boolean> cir) {
-        if (Utils.isEmojiGlyphStyled(style) && EmojiRegistry.getById(codePoint) != null) {
+        if (Utils.isEmojiGlyphStyled(style) && SpriteRegistry.getById(codePoint) != null) {
             lastSpaceBreak = i + startOffset;
             lastSpaceStyle = style;
         }
@@ -31,7 +32,7 @@ public abstract class TextHandlerLineBreakingVisitorMixin {
     /** Allows line breaking to split after an emoji glyph as a valid wrap point. */
     @Inject(method = "accept(ILnet/minecraft/text/Style;I)Z", at = @At("RETURN"))
     private void markEmojiBreakAfter(int i, Style style, int codePoint, CallbackInfoReturnable<Boolean> cir) {
-        if (Utils.isEmojiGlyphStyled(style) && EmojiRegistry.getById(codePoint) != null) {
+        if (Utils.isEmojiGlyphStyled(style) && SpriteRegistry.getById(codePoint) != null) {
             lastSpaceBreak = i + startOffset + Character.charCount(codePoint);
             lastSpaceStyle = style;
         }

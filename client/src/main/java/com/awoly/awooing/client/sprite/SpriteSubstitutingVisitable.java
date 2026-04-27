@@ -1,4 +1,4 @@
-package com.awoly.awooing.client.emoji;
+package com.awoly.awooing.client.sprite;
 
 import com.awoly.awooing.client.Utils;
 import java.util.Optional;
@@ -6,19 +6,18 @@ import java.util.function.BiFunction;
 import net.minecraft.text.StringVisitable;
 import net.minecraft.text.Style;
 
-public final class EmojiSubstitutingVisitable implements StringVisitable {
+public final class SpriteSubstitutingVisitable implements StringVisitable {
 
     private final StringVisitable delegate;
 
-    public EmojiSubstitutingVisitable(StringVisitable delegate) {
+    public SpriteSubstitutingVisitable(StringVisitable delegate) {
         this.delegate = delegate;
     }
 
     @Override
     public <T> Optional<T> visit(StringVisitable.Visitor<T> visitor) {
         return delegate.visit(str -> {
-            Optional<T> result = visitString(str, Style.EMPTY, (style, s) -> visitor.accept(s));
-            return result;
+            return visitString(str, Style.EMPTY, (style, s) -> visitor.accept(s));
         });
     }
 
@@ -45,7 +44,7 @@ public final class EmojiSubstitutingVisitable implements StringVisitable {
                 // Look for the CLOSING colon in the SAME chunk
                 if (j < str.length() && str.charAt(j) == ':' && j > i + 1) {
                     String name = str.substring(i + 1, j);
-                    Emoji emoji = EmojiRegistry.get(name);
+                    Sprite emoji = SpriteRegistry.getByName(name);
 
                     if (emoji != null) {
                         // Emit prefix
@@ -57,7 +56,7 @@ public final class EmojiSubstitutingVisitable implements StringVisitable {
                         }
 
                         // Emit Emoji
-                        Optional<T> r = emit.apply(Style.EMPTY.withFont(Utils.EMOJI_GLYPH_FONT),
+                        Optional<T> r = emit.apply(Style.EMPTY.withFont(Utils.SPRITE_GLYPH_FONT),
                                 new String(Character.toChars(emoji.getInternalId())));
                         if (r.isPresent()) {
                             return r;
