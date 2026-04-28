@@ -47,8 +47,8 @@ public interface Packet {
         return new PermissionPacket(permissionType, message);
     }
 
-    static Packet authResponse(String username, int color, int protocolVersion, int clientVersion) {
-        return new AuthResponsePacket(username, color, protocolVersion, clientVersion);
+    static Packet authResponse(String username, int color, int protocolVersion, int clientVersion, boolean isAutoConnecting) {
+        return new AuthResponsePacket(username, color, protocolVersion, clientVersion, isAutoConnecting);
     }
 
     // roomPassword may be null for public rooms
@@ -218,7 +218,13 @@ public interface Packet {
         }
     }
 
-    record AuthResponsePacket(String username, Integer color, Integer protocolVersion, Integer clientVersion) implements Packet {
+    record AuthResponsePacket(
+        String username, 
+        Integer color, 
+        Integer protocolVersion, 
+        Integer clientVersion, 
+        Boolean isAutoConnecting
+    ) implements Packet {
         public PacketType type() {
             return PacketType.AUTH_RESPONSE;
         }

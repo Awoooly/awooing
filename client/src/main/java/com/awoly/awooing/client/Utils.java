@@ -18,7 +18,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.regex.Pattern;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
@@ -44,26 +46,25 @@ public class Utils {
     public static final Font SPRITE_GLYPH_FONT = new StyleSpriteSource.Font(
             Identifier.of("awooing", "emoji_glyph_font"));
     public static final Pattern EMOJI_PATTERN = Pattern.compile(":([a-z0-9_]+):");
+    private static final Queue<Text> MESSAGE_BUFFER = new ConcurrentLinkedQueue<>();
 
     private static final String[] AWOO_COMMAND_PREFIXES = new String[]{"/a ", "/amsg ", "/ar ", "/f a "};
 
     public static void renderMsg(String prefix, TextColor color, Text message) {
         MinecraftClient.getInstance().execute(() -> {
             String normalizedPrefix = (prefix == null || prefix.isBlank()) ? null : prefix;
-            if (MinecraftClient.getInstance().player == null) {
-                if (normalizedPrefix == null) {
-                    LOGGER.info("{}", message.getString());
-                } else {
-                    LOGGER.info("[{}] {}", normalizedPrefix, message.getString());
-                }
-                return;
-            }
-
+            
             Text transformed = normalizedPrefix == null
                 ? message.copy().setStyle(message.getStyle().withColor(color))
                 : Text.literal("[" + normalizedPrefix + "] ")
                     .setStyle(Style.EMPTY.withFont(SPRITE_FONT).withColor(color))
                     .append(message);
+
+            if (!canDisplayMessage()) {
+                LOGGER.info("Can't display message, saving to buffer");
+                MESSAGE_BUFFER.add(transformed);
+                return;
+            }
 
             MinecraftClient.getInstance().player.sendMessage(transformed, false);
         });
@@ -83,6 +84,20 @@ public class Utils {
 
     public static void renderMsg(int color, Text text) {
         renderMsg("Awoo", TextColor.fromRgb(color), text);
+    }
+
+    public static void flushMessageBuffer() {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client.player != null) {
+            Text msg;
+            while ((msg = MESSAGE_BUFFER.poll()) != null) {
+                client.player.sendMessage(msg, false);
+            }
+        }
+    }
+
+    public static boolean canDisplayMessage() {
+        return MinecraftClient.getInstance().player != null;
     }
 
     public static void configureSsl(ChatClient client, String truststorePath, String truststorePassword) throws Exception {
