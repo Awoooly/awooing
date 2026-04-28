@@ -4,6 +4,7 @@ import static com.awoly.awooing.client.Awooing.LOGGER;
 import static com.awoly.awooing.client.Utils.SPRITE_GLYPH_FONT;
 import static com.awoly.awooing.client.Utils.INFO_COLOR;
 import static com.awoly.awooing.client.Utils.WARN_COLOR;
+import static com.awoly.awooing.client.Utils.canDisplayMessage;
 import static com.awoly.awooing.client.Utils.configureSsl;
 import static com.awoly.awooing.client.Utils.getActiveRoomId;
 import static com.awoly.awooing.client.Utils.getLedRoomIds;
@@ -633,7 +634,9 @@ public class AwooCommand {
             return Command.SINGLE_SUCCESS;
         }
 
-        renderMsg(INFO_COLOR, "Connecting...");
+        if (canDisplayMessage()) {
+            renderMsg(INFO_COLOR, "Connecting...");
+        }
 
         if (Awooing.getInstance().chatClient != null && !Awooing.getInstance().chatClient.isClosed()) {
             Awooing.getInstance().chatClient.close();

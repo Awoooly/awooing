@@ -69,7 +69,7 @@ public final class AuthenticationHandlers {
             clientVersion = 0;
         }
 
-        chatClient.sendPacket(Packet.authResponse(username, config.userColor, protocolVersion, clientVersion));
+        chatClient.sendPacket(Packet.authResponse(username, config.userColor, protocolVersion, clientVersion, config.autoConnect));
     }
 
     private void failAuthentication(String reason) {
