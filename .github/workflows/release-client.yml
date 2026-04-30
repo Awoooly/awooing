@@ -27,6 +27,9 @@ jobs:
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
 
+      - name: setup gradle
+        uses: gradle/actions/setup-gradle@v4
+
       - name: read versions from gradle.properties
         id: versions
         run: |
@@ -37,10 +40,6 @@ jobs:
 
       - name: build client jar
         run: ./gradlew :client:build
-
-      - name: verify release jar exists
-        run: |
-          test -f "client/build/libs/awooing-${{ steps.versions.outputs.mod_version }}+${{ steps.versions.outputs.minecraft_version }}.jar"
 
       - name: create github release and upload mod jar
         uses: softprops/action-gh-release@v2

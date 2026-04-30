@@ -68,14 +68,7 @@ public final class AuthenticationHandlers {
             renderMsg(INFO_COLOR, "Missing session service; continuing without Mojang auth");
         }
 
-        int clientVersion;
-        try {
-            clientVersion = versionToInt(getVersion());
-        } catch (RuntimeException e) {
-            clientVersion = 0;
-        }
-
-        chatClient.sendPacket(Packet.authResponse(username, config.userColor, protocolVersion, clientVersion));
+        chatClient.sendPacket(Packet.authResponse(username, config.userColor, protocolVersion, versionToInt(getVersion())));
     }
 
     public void handleConnected(Packet.ConnectedPacket packet) {

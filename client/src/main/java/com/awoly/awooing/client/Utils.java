@@ -400,10 +400,6 @@ public class Utils {
     }
 
     public static int versionToInt(String version) {
-        if (FabricLoader.getInstance().isDevelopmentEnvironment()) {
-            return 0; 
-        }
-
         String[] parts = version.split("\\.");
         int major = Integer.parseInt(parts[0]);
         int minor = parts.length > 1 ? Integer.parseInt(parts[1]) : 0;
