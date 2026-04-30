@@ -2,7 +2,6 @@ package com.awoly.awooing.client.mixin;
 
 import com.awoly.awooing.client.Utils;
 import com.awoly.awooing.client.sprite.SpriteRegistry;
-
 import net.minecraft.text.Style;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;

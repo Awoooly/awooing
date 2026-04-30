@@ -1,18 +1,24 @@
 package com.awoly.awooing.client.handlers;
 
 import static com.awoly.awooing.client.Utils.INFO_COLOR;
+import static com.awoly.awooing.client.Utils.WHITE;
 import static com.awoly.awooing.client.Utils.getUsername;
 import static com.awoly.awooing.client.Utils.getVersion;
 import static com.awoly.awooing.client.Utils.renderMsg;
+import static com.awoly.awooing.client.Utils.text;
 import static com.awoly.awooing.client.Utils.versionToInt;
 import static com.awoly.awooing.client.config.ConfigManager.config;
 
 import com.awoly.awooing.client.ChatClient;
+import com.awoly.awooing.client.config.ConfigManager;
 import com.awoly.awooing.common.Packet;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.session.Session;
+import net.minecraft.text.ClickEvent;
+import net.minecraft.text.HoverEvent;
+import net.minecraft.text.MutableText;
 import org.java_websocket.framing.CloseFrame;
 
 public final class AuthenticationHandlers {
@@ -69,7 +75,42 @@ public final class AuthenticationHandlers {
             clientVersion = 0;
         }
 
-        chatClient.sendPacket(Packet.authResponse(username, config.userColor, protocolVersion, clientVersion, config.autoConnect));
+        chatClient.sendPacket(Packet.authResponse(username, config.userColor, protocolVersion, clientVersion));
+    }
+
+    public void handleConnected(Packet.ConnectedPacket packet) {
+        renderMsg(INFO_COLOR, "Connected successfully");
+        
+        if (config.showedConnectedHint) {
+            return;
+        }
+
+        MinecraftClient.getInstance().execute(() -> {
+            String welcome = config.autoConnect ? " Welcome to Awooing, " + getUsername() + "! " : "";
+
+            MutableText welcomeText = text(welcome)
+                .append(text("Start with "))
+                .append(text("/awoo join", WHITE).styled(style -> style
+                    .withClickEvent(new ClickEvent.SuggestCommand("/awoo join "))
+                    .withHoverEvent(new HoverEvent.ShowText(text("Click to prepare command")))))
+                .append(text(" <room> to join a room or "))
+                .append(text("/awoo create ", WHITE).styled(style -> style
+                    .withClickEvent(new ClickEvent.SuggestCommand("/awoo create "))
+                    .withHoverEvent(new HoverEvent.ShowText(text("Click to prepare command")))))
+                .append(text(" <name> to host one yourself. Use "))
+                .append(text("/amsg", WHITE).styled(style -> style
+                    .withClickEvent(new ClickEvent.SuggestCommand("/amsg "))
+                    .withHoverEvent(new HoverEvent.ShowText(text("Click to prepare command")))))
+                .append(text(" <user> <message> to send direct messages, and "))
+                .append(text("/awoo publicrooms", WHITE).styled(style -> style
+                    .withClickEvent(new ClickEvent.SuggestCommand("/awoo publicrooms"))
+                    .withHoverEvent(new HoverEvent.ShowText(text("Click to prepare command")))))
+                .append(text(" to browse public rooms."));
+
+            renderMsg(INFO_COLOR, welcomeText);
+            config.showedConnectedHint = true;
+            ConfigManager.save();
+        });
     }
 
     private void failAuthentication(String reason) {

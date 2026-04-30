@@ -4,7 +4,6 @@ import com.awoly.awooing.client.Utils;
 import com.awoly.awooing.client.sprite.Sprite;
 import com.awoly.awooing.client.sprite.SpriteRegistry;
 import com.awoly.awooing.client.sprite.SpriteSubstitutingText;
-
 import net.minecraft.client.font.BakedGlyph;
 import net.minecraft.client.font.TextHandler;
 import net.minecraft.client.font.TextRenderer;

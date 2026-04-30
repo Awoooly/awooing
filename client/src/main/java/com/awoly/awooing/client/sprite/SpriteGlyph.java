@@ -31,7 +31,7 @@ public final class SpriteGlyph implements BakedGlyph {
         this.height = height;
         this.width = imgW * scale;
 
-        this.metrics = GlyphMetrics.empty(width);
+        this.metrics = GlyphMetrics.empty(emoji.getSource() == SpriteSource.ASSET ? 0f : width);
     }
 
     public SpriteGlyph(Sprite emoji) {
@@ -54,14 +54,17 @@ public final class SpriteGlyph implements BakedGlyph {
             public Style style() {
                 return fstyle;
             }
+            
             @Override
             public RenderPipeline getPipeline() {
                 return RenderPipelines.GUI_TEXT;
             }
+            
             @Override
             public RenderLayer getRenderLayer(TextLayerType type) {
                 return RenderLayers.text(emoji.getTextureId());
             }
+            
             @Override
             public GpuTextureView textureView() {
                 if (emoji == null || emoji.getTexture() == null) {
@@ -69,22 +72,27 @@ public final class SpriteGlyph implements BakedGlyph {
                 }
                 return emoji.getTexture().getGlTextureView();
             }
+            
             @Override
             public float getEffectiveMinX() {
                 return fx;
             }
+            
             @Override
             public float getEffectiveMaxX() {
                 return fx + width;
             }
+            
             @Override
             public float getEffectiveMinY() {
                 return fy;
             }
+            
             @Override
             public float getEffectiveMaxY() {
                 return fy + height;
             }
+            
             @Override
             public void render(Matrix4f matrix, VertexConsumer consumer, int light, boolean noDepth) {
                 if (emoji == null) {
