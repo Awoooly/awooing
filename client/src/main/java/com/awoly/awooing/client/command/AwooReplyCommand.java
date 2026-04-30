@@ -2,6 +2,7 @@ package com.awoly.awooing.client.command;
 
 import static com.awoly.awooing.client.Utils.INFO_COLOR;
 import static com.awoly.awooing.client.Utils.isClientConnected;
+import static com.awoly.awooing.client.Utils.notConnectedText;
 import static com.awoly.awooing.client.Utils.renderMsg;
 import static com.awoly.awooing.client.Utils.showUsage;
 import static com.mojang.brigadier.arguments.StringArgumentType.getString;
@@ -21,7 +22,7 @@ public class AwooReplyCommand {
             .executes(context -> showUsage("/ar <message>"))
             .then(ClientCommandManager.argument("message", greedyString()).executes(context -> {
                 if (!isClientConnected()) {
-                    renderMsg(INFO_COLOR, "You are not connected to the server");
+                    renderMsg(INFO_COLOR, notConnectedText());
                     return Command.SINGLE_SUCCESS;
                 }
 

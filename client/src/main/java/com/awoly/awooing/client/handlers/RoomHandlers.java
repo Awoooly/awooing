@@ -2,18 +2,34 @@ package com.awoly.awooing.client.handlers;
 
 import static com.awoly.awooing.client.Utils.CHAT_COLOR;
 import static com.awoly.awooing.client.Utils.INFO_COLOR;
+import static com.awoly.awooing.client.Utils.WHITE;
 import static com.awoly.awooing.client.Utils.getUsername;
 import static com.awoly.awooing.client.Utils.renderMsg;
 import static com.awoly.awooing.client.Utils.setAwooing;
 import static com.awoly.awooing.client.Utils.text;
+import static com.awoly.awooing.client.config.ConfigManager.config;
 
 import com.awoly.awooing.client.Awooing;
 import com.awoly.awooing.client.ChatRoom;
 import com.awoly.awooing.client.Utils;
+import com.awoly.awooing.client.config.ConfigManager;
 import com.awoly.awooing.common.Packet;
 import java.util.List;
+import net.minecraft.text.ClickEvent;
+import net.minecraft.text.HoverEvent;
+import net.minecraft.text.MutableText;
 
 public final class RoomHandlers {
+
+    public void handleRoomCreated(Packet.RoomCreatedPacket packet) {
+        String roomId = packet.roomId();
+        Awooing.getInstance().currentRoomId = roomId;
+        renderMsg(roomId, INFO_COLOR, "Room created");
+
+        if (!ConfigManager.config.showedLeaderHint) {
+            sendLeaderHint(roomId);
+        }
+    }
 
     public void handleRoomList(Packet.RoomListPacket packet) {
         String roomNames = String.join(", ", packet.roomNames());
@@ -33,6 +49,35 @@ public final class RoomHandlers {
 
         if (sender != null && sender.equals(getUsername()) && Awooing.getInstance().currentRoomId == null) {
             Awooing.getInstance().currentRoomId = roomId;
+
+            if (config.showedRoomJoinHint) {
+                return;
+            }
+
+            if (Awooing.getInstance().chatClient.getJoinedRooms().size() == 1) {
+                MutableText hintText = text("Use ")
+                    .append(text("/a", WHITE).styled(style -> style
+                        .withClickEvent(new ClickEvent.SuggestCommand("/a "))
+                        .withHoverEvent(new HoverEvent.ShowText(text("Click to prepare command")))))
+                    .append(text(" <message> to send a message to the room, or "))
+                    .append(text("/chat awoo", WHITE).styled(style -> style
+                        .withClickEvent(new ClickEvent.SuggestCommand("/chat awoo"))
+                        .withHoverEvent(new HoverEvent.ShowText(text("Click to prepare command")))))
+                    .append(text(" to toggle the chat, "))
+                    .append(text("/awoo list", WHITE).styled(style -> style
+                        .withClickEvent(new ClickEvent.SuggestCommand("/awoo list "))
+                        .withHoverEvent(new HoverEvent.ShowText(text("Click to prepare command")))))
+                    .append(text(" to see members, and "))
+                    .append(text("/awoo leave", WHITE).styled(style -> style
+                        .withClickEvent(new ClickEvent.SuggestCommand("/awoo leave "))
+                        .withHoverEvent(new HoverEvent.ShowText(text("Click to prepare command")))))
+                    .append(text(" to leave the room."));
+
+                renderMsg(roomId, INFO_COLOR, hintText);
+
+                ConfigManager.config.showedRoomJoinHint = true;
+                ConfigManager.save();
+            }
         }
     }
 
@@ -81,11 +126,32 @@ public final class RoomHandlers {
 
         room.setLeader(target.equals(getUsername()));
 
-        String message = target.equals(getUsername())
-            ? "You are now the leader"
-            : target + " is the new leader";
+        if (target.equals(getUsername())) {
+            renderMsg(packet.roomId(), INFO_COLOR, "You are now the leader");
+            sendLeaderHint(packet.roomId());
+        } else {
+            renderMsg(packet.roomId(), INFO_COLOR, target + " is the new leader");
+        }
+    }
 
-        renderMsg(packet.roomId(), INFO_COLOR, message);
+    private void sendLeaderHint(String roomId) {
+        MutableText hintText = text("Use ")
+            .append(text("/awoo kick", WHITE).styled(style -> style
+                .withClickEvent(new ClickEvent.SuggestCommand("/awoo kick "))
+                .withHoverEvent(new HoverEvent.ShowText(text("Click to prepare command")))))
+            .append(text(" to remove users, "))
+            .append(text("/awoo host", WHITE).styled(style -> style
+                .withClickEvent(new ClickEvent.SuggestCommand("/awoo host "))
+                .withHoverEvent(new HoverEvent.ShowText(text("Click to prepare command")))))
+            .append(text(" to transfer leadership, and "))
+            .append(text("/awoo roomprivacy", WHITE).styled(style -> style
+                .withClickEvent(new ClickEvent.SuggestCommand("/awoo roomprivacy " + roomId + " "))
+                .withHoverEvent(new HoverEvent.ShowText(text("Click to prepare command")))))
+            .append(text(" to change room settings."));
+
+        renderMsg(INFO_COLOR, hintText);
+        ConfigManager.config.showedLeaderHint = true;
+        ConfigManager.save();
     }
 
     public void handleMsg(Packet.MsgPacket packet) {

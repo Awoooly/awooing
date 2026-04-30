@@ -4,8 +4,9 @@ import static com.awoly.awooing.client.Awooing.LOGGER;
 import static com.awoly.awooing.client.Awooing.getInstance;
 // joinedRooms accessed via Awooing.getInstance().chatClient.getJoinedRooms()
 
-import com.awoly.awooing.common.RoomAccessMode;
+import com.awoly.awooing.client.config.ConfigManager;
 import com.awoly.awooing.common.PermissionType;
+import com.awoly.awooing.common.RoomAccessMode;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.Suggestions;
@@ -27,6 +28,8 @@ import javax.net.ssl.TrustManagerFactory;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.text.ClickEvent;
+import net.minecraft.text.HoverEvent;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
 import net.minecraft.text.StyleSpriteSource;
@@ -47,18 +50,27 @@ public class Utils {
             Identifier.of("awooing", "emoji_glyph_font"));
     public static final Pattern EMOJI_PATTERN = Pattern.compile(":([a-z0-9_]+):");
     private static final Queue<Text> MESSAGE_BUFFER = new ConcurrentLinkedQueue<>();
+    private static final Text NOT_CONNECTED_TEXT = text("You are not connected, use ")
+        .append(text("/awoo connect", WHITE).styled(style -> style
+            .withClickEvent(new ClickEvent.SuggestCommand("/awoo connect"))
+            .withHoverEvent(new HoverEvent.ShowText(text("Click to prepare command")))))
+        .append(text(" to connect"));
 
     private static final String[] AWOO_COMMAND_PREFIXES = new String[]{"/a ", "/amsg ", "/ar ", "/f a "};
 
     public static void renderMsg(String prefix, TextColor color, Text message) {
         MinecraftClient.getInstance().execute(() -> {
             String normalizedPrefix = (prefix == null || prefix.isBlank()) ? null : prefix;
-            
-            Text transformed = normalizedPrefix == null
-                ? message.copy().setStyle(message.getStyle().withColor(color))
+
+            MutableText base = normalizedPrefix == null
+                ? message.copy()
                 : Text.literal("[" + normalizedPrefix + "] ")
-                    .setStyle(Style.EMPTY.withFont(SPRITE_FONT).withColor(color))
+                    .setStyle(Style.EMPTY.withColor(color))
                     .append(message);
+
+            Text transformed = Text.empty()
+                .setStyle(Style.EMPTY.withFont(SPRITE_FONT).withColor(color))
+                .append(base);
 
             if (!canDisplayMessage()) {
                 LOGGER.info("Can't display message, saving to buffer");
@@ -86,6 +98,10 @@ public class Utils {
         renderMsg("Awoo", TextColor.fromRgb(color), text);
     }
 
+    public static Text notConnectedText() {
+        return NOT_CONNECTED_TEXT;
+    }
+
     public static void flushMessageBuffer() {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client.player != null) {
@@ -98,6 +114,21 @@ public class Utils {
 
     public static boolean canDisplayMessage() {
         return MinecraftClient.getInstance().player != null;
+    }
+
+    public static void sendConnectHint() {
+        MinecraftClient.getInstance().execute(() -> {
+            MutableText welcome = text("Welcome to Awooing, " + getUsername() + "! Use ")
+                .append(text("/connect", WHITE).styled(style -> style
+                    .withClickEvent(new ClickEvent.SuggestCommand("/connect"))
+                    .withHoverEvent(new HoverEvent.ShowText(text("Click to prepare command")))))
+                .append(text(" to use the service!", INFO_COLOR));
+
+            renderMsg(INFO_COLOR, welcome);
+        });
+
+        ConfigManager.config.showedStartupWelcomeHint = true;
+        ConfigManager.save();
     }
 
     public static void configureSsl(ChatClient client, String truststorePath, String truststorePassword) throws Exception {

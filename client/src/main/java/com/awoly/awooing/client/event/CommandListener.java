@@ -3,6 +3,7 @@ package com.awoly.awooing.client.event;
 import static com.awoly.awooing.client.Utils.INFO_COLOR;
 import static com.awoly.awooing.client.Utils.getActiveRoomId;
 import static com.awoly.awooing.client.Utils.isClientConnected;
+import static com.awoly.awooing.client.Utils.notConnectedText;
 import static com.awoly.awooing.client.Utils.renderMsg;
 import static com.awoly.awooing.client.Utils.setAwooing;
 
@@ -24,7 +25,7 @@ public class CommandListener {
 
         if (command.startsWith("chat awoo")) {
             if (!isClientConnected()) {
-                renderMsg(INFO_COLOR, "You are not connected to the server");
+                renderMsg(INFO_COLOR, notConnectedText());
                 return false;
             }
 

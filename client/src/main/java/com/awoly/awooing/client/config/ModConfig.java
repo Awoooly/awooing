@@ -7,4 +7,8 @@ public class ModConfig {
     public int lastPort = DEFAULT_PORT;
     public boolean autoConnect = true;
     public int userColor = 0xFFFFFF;
+    public boolean showedStartupWelcomeHint = false;
+    public boolean showedRoomJoinHint = false;
+    public boolean showedLeaderHint = false;
+    public boolean showedConnectedHint = false;
 }

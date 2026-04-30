@@ -1,8 +1,8 @@
 package com.awoly.awooing.client.command;
 
 import static com.awoly.awooing.client.Awooing.LOGGER;
-import static com.awoly.awooing.client.Utils.SPRITE_GLYPH_FONT;
 import static com.awoly.awooing.client.Utils.INFO_COLOR;
+import static com.awoly.awooing.client.Utils.SPRITE_GLYPH_FONT;
 import static com.awoly.awooing.client.Utils.WARN_COLOR;
 import static com.awoly.awooing.client.Utils.canDisplayMessage;
 import static com.awoly.awooing.client.Utils.configureSsl;
@@ -10,8 +10,9 @@ import static com.awoly.awooing.client.Utils.getActiveRoomId;
 import static com.awoly.awooing.client.Utils.getLedRoomIds;
 import static com.awoly.awooing.client.Utils.getUsername;
 import static com.awoly.awooing.client.Utils.getVersion;
-import static com.awoly.awooing.client.Utils.isClientConnected;
 import static com.awoly.awooing.client.Utils.isAdmin;
+import static com.awoly.awooing.client.Utils.isClientConnected;
+import static com.awoly.awooing.client.Utils.notConnectedText;
 import static com.awoly.awooing.client.Utils.renderMsg;
 import static com.awoly.awooing.client.Utils.showUsage;
 import static com.awoly.awooing.client.Utils.suggestLedRoomUsers;
@@ -49,8 +50,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-import net.minecraft.text.MutableText;
 import net.minecraft.registry.RegistryWrapper.WrapperLookup;
+import net.minecraft.text.MutableText;
 
 public class AwooCommand {
 
@@ -181,26 +182,12 @@ public class AwooCommand {
             }
         }
 
-        List<String> joinedRoomIds = chatClient == null
-            ? List.of()
-            : chatClient.getJoinedRooms().values().stream()
-                .map(ChatRoom::getName)
-                .sorted()
-                .toList();
-
-        List<String> ledRoomIds = getLedRoomIds();
         String activeRoomId = getActiveRoomId();
 
         renderMsg(INFO_COLOR, "Status:");
-        renderMsg(null, INFO_COLOR, "- Connected: " + (connected ? "Yes (" + endpoint + ")" : "No"));
-        renderMsg(null, INFO_COLOR,
-            "- Joined rooms (" + joinedRoomIds.size() + "): "
-                + (joinedRoomIds.isEmpty() ? "None" : String.join(", ", joinedRoomIds)));
-        renderMsg(null, INFO_COLOR,
-            "- Led rooms (" + ledRoomIds.size() + "): "
-                + (ledRoomIds.isEmpty() ? "None" : String.join(", ", ledRoomIds)));
+        renderMsg(null, INFO_COLOR, "- Connected: " + (connected ? "True (" + endpoint + ")" : "False"));
         renderMsg(null, INFO_COLOR, "- Active room: " + (activeRoomId == null ? "None" : activeRoomId));
-        renderMsg(null, INFO_COLOR, "- Awooing: " + (instance.isAwooing ? "Yes (" + activeRoomId + ")" : "No"));
+        renderMsg(null, INFO_COLOR, "- Awooing: " + (instance.isAwooing ? "True (" + activeRoomId + ")" : "False"));
         renderMsg(null, INFO_COLOR, "- Autoconnect: " + (config.autoConnect ? "Enabled" : "Disabled"));
         renderMsg(null, INFO_COLOR, "- Version: " + getVersion());
 
@@ -648,7 +635,9 @@ public class AwooCommand {
             configureSsl(Awooing.getInstance().chatClient, "client-truststore.p12", "password");
         } catch (Exception e) {
             LOGGER.error("Failed to configure SSL", e);
-            renderMsg(INFO_COLOR, "Failed to configure SSL: " + e.getMessage());
+            if (canDisplayMessage()) {
+                renderMsg(INFO_COLOR, "Failed to configure SSL: " + e.getMessage());
+            }
             return Command.SINGLE_SUCCESS;
         }
 
@@ -659,7 +648,7 @@ public class AwooCommand {
 
     private static boolean requireConnected() {
         if (!isClientConnected()) {
-            renderMsg(INFO_COLOR, "You are not connected to the server");
+            renderMsg(INFO_COLOR, notConnectedText());
             return false;
         }
         return true;

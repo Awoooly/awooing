@@ -47,8 +47,16 @@ public interface Packet {
         return new PermissionPacket(permissionType, message);
     }
 
-    static Packet authResponse(String username, int color, int protocolVersion, int clientVersion, boolean isAutoConnecting) {
-        return new AuthResponsePacket(username, color, protocolVersion, clientVersion, isAutoConnecting);
+    static Packet authResponse(String username, int color, int protocolVersion, int clientVersion) {
+        return new AuthResponsePacket(username, color, protocolVersion, clientVersion);
+    }
+
+    static Packet connected() {
+        return new ConnectedPacket();
+    }
+
+    static Packet roomCreated(String roomId) {
+        return new RoomCreatedPacket(roomId);
     }
 
     // roomPassword may be null for public rooms
@@ -222,17 +230,28 @@ public interface Packet {
         String username, 
         Integer color, 
         Integer protocolVersion, 
-        Integer clientVersion, 
-        Boolean isAutoConnecting
+        Integer clientVersion
     ) implements Packet {
         public PacketType type() {
             return PacketType.AUTH_RESPONSE;
         }
     }
 
+    record ConnectedPacket() implements Packet {
+        public PacketType type() {
+            return PacketType.CONNECTED;
+        }
+    }
+
     record RoomCreatePacket(String roomId, String roomName, RoomAccessMode roomAccessMode, String roomPassword) implements Packet {
         public PacketType type() {
             return PacketType.ROOM_CREATE;
+        }
+    }
+
+    record RoomCreatedPacket(String roomId) implements Packet {
+        public PacketType type() {
+            return PacketType.ROOM_CREATED;
         }
     }
 
@@ -420,7 +439,9 @@ public interface Packet {
                 case PERMISSION       -> ctx.deserialize(obj, PermissionPacket.class);
                 case SESSION_CHALLENGE -> ctx.deserialize(obj, SessionChallengePacket.class);
                 case AUTH_RESPONSE    -> ctx.deserialize(obj, AuthResponsePacket.class);
+                case CONNECTED        -> ctx.deserialize(obj, ConnectedPacket.class);
                 case ROOM_CREATE      -> ctx.deserialize(obj, RoomCreatePacket.class);
+                case ROOM_CREATED     -> ctx.deserialize(obj, RoomCreatedPacket.class);
                 case ROOM_JOIN        -> ctx.deserialize(obj, RoomJoinPacket.class);
                 case ROOM_LEAVE       -> ctx.deserialize(obj, RoomLeavePacket.class);
                 case ROOM_LIST        -> ctx.deserialize(obj, RoomListPacket.class);

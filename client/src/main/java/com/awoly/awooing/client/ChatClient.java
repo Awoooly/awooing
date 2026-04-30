@@ -2,6 +2,7 @@ package com.awoly.awooing.client;
 
 import static com.awoly.awooing.client.Awooing.LOGGER;
 import static com.awoly.awooing.client.Utils.INFO_COLOR;
+import static com.awoly.awooing.client.Utils.canDisplayMessage;
 import static com.awoly.awooing.client.Utils.renderMsg;
 import static com.awoly.awooing.client.Utils.setAwooing;
 import static org.java_websocket.framing.CloseFrame.GOING_AWAY;
@@ -50,6 +51,7 @@ public class ChatClient extends WebSocketClient {
     public ChatClient(URI serverUri) {
         super(serverUri);
         setConnectionLostTimeout(CONNECTION_LOST_TIMEOUT_DURATION);
+        registerHandler(Packet.RoomCreatedPacket.class, roomHandlers::handleRoomCreated);
         registerHandler(Packet.RoomJoinPacket.class, roomHandlers::handleUserJoinedRoom);
         registerHandler(Packet.RoomLeavePacket.class, roomHandlers::handleUserLeftRoom);
         registerHandler(Packet.RoomListPacket.class, roomHandlers::handleRoomList);
@@ -62,6 +64,7 @@ public class ChatClient extends WebSocketClient {
         registerHandler(Packet.InfoPacket.class, infoHandlers::handleInfo);
         registerHandler(Packet.ServerInfoPacket.class, infoHandler::handleInfo);
         registerHandler(Packet.PermissionPacket.class, permissionHandlers::handlePermission);
+        registerHandler(Packet.ConnectedPacket.class, authenticationHandlers::handleConnected);
         registerHandler(Packet.SessionChallengePacket.class, authenticationHandlers::handleSessionChallenge);
         registerHandler(Packet.PrivateMsgPacket.class, directMessageHandlers::handlePrivateMsg);
     }
@@ -104,12 +107,16 @@ public class ChatClient extends WebSocketClient {
         Awooing.getInstance().permissionType = PermissionType.USER;
         setAwooing(false);
 
-        switch (code) {
-            case NEVER_CONNECTED -> renderMsg(INFO_COLOR, "Connecting to server failed");
-            case NORMAL          -> { }
-            case GOING_AWAY      -> renderMsg(INFO_COLOR, "Server is shutting down, disconnecting");
-            case REFUSE          -> renderMsg(INFO_COLOR, reason);
-            default              -> renderMsg(INFO_COLOR, "Connection lost");
+        String message = switch (code) {
+            case NEVER_CONNECTED -> canDisplayMessage() ? "Connecting to server failed" : null;
+            case NORMAL          -> null;
+            case GOING_AWAY      -> "Server is shutting down, disconnecting";
+            case REFUSE          -> reason;
+            default              -> "Connection lost";
+        };
+
+        if (message != null) {
+            renderMsg(INFO_COLOR, message);
         }
     }
 

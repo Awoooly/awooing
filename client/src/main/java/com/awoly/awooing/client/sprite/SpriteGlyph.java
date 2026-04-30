@@ -30,7 +30,7 @@ public final class SpriteGlyph implements BakedGlyph {
         this.height = height;
         this.width = imgW * scale;
 
-        this.metrics = GlyphMetrics.empty(width);
+        this.metrics = GlyphMetrics.empty(emoji.getSource() == SpriteSource.ASSET ? 0f : width);
     }
 
     public SpriteGlyph(Sprite emoji) {

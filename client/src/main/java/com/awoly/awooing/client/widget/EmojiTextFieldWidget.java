@@ -3,7 +3,6 @@ package com.awoly.awooing.client.widget;
 import com.awoly.awooing.client.Utils;
 import com.awoly.awooing.client.sprite.Sprite;
 import com.awoly.awooing.client.sprite.SpriteRegistry;
-
 import java.util.regex.Matcher;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.widget.TextFieldWidget;
