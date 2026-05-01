@@ -45,7 +45,7 @@ public class Awooing implements ClientModInitializer {
         JoinListener.register();
 
         if (ConfigManager.config.autoConnect && !ConfigManager.config.lastIp.isBlank()) {
-            AwooCommand.connectToHost(ConfigManager.config.lastIp, ConfigManager.config.lastPort);
+            Utils.connectToHost(ConfigManager.config.lastIp, ConfigManager.config.lastPort);
         }
 
         if (!ConfigManager.config.autoConnect && !ConfigManager.config.showedStartupWelcomeHint) {
