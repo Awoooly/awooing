@@ -2,6 +2,7 @@ package com.awoly.awooing.client.handlers;
 
 import static com.awoly.awooing.client.Utils.INFO_COLOR;
 import static com.awoly.awooing.client.Utils.WHITE;
+import static com.awoly.awooing.client.Utils.canDisplayMessage;
 import static com.awoly.awooing.client.Utils.getUsername;
 import static com.awoly.awooing.client.Utils.getVersion;
 import static com.awoly.awooing.client.Utils.renderMsg;
@@ -59,20 +60,28 @@ public final class AuthenticationHandlers {
                 try {
                     minecraftClient.getApiServices().sessionService().joinServer(uuid, accessToken, packet.serverId());
                 } catch (Exception e) {
-                    renderMsg(INFO_COLOR, "Auth token rejected; continuing without Mojang auth");
+                    if (canDisplayMessage()) {
+                        renderMsg(INFO_COLOR, "Auth token rejected; continuing without Mojang auth");
+                    }
                 }
             } else {
-                renderMsg(INFO_COLOR, "Missing auth token/profile; continuing without Mojang auth");
+                if (canDisplayMessage()) {
+                    renderMsg(INFO_COLOR, "Missing auth token/profile; continuing without Mojang auth");
+                }
             }
         } else {
-            renderMsg(INFO_COLOR, "Missing session service; continuing without Mojang auth");
+            if (canDisplayMessage()) {
+                renderMsg(INFO_COLOR, "Missing session service; continuing without Mojang auth");
+            }
         }
 
         chatClient.sendPacket(Packet.authResponse(username, config.userColor, protocolVersion, versionToInt(getVersion())));
     }
 
     public void handleConnected(Packet.ConnectedPacket packet) {
-        renderMsg(INFO_COLOR, "Connected successfully");
+        if (canDisplayMessage()) {
+            renderMsg(INFO_COLOR, "Connected successfully");
+        }
         
         if (config.showedConnectedHint) {
             return;
