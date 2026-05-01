@@ -48,7 +48,7 @@ public class Utils {
     public static final Font SPRITE_FONT = new StyleSpriteSource.Font(Identifier.of("awooing", "emoji_font"));
     public static final Font SPRITE_GLYPH_FONT = new StyleSpriteSource.Font(
             Identifier.of("awooing", "emoji_glyph_font"));
-    public static final Pattern EMOJI_PATTERN = Pattern.compile(":([a-z0-9_]+):");
+    public static final Pattern EMOJI_PATTERN = Pattern.compile(":([a-zA-Z0-9_]+):", Pattern.CASE_INSENSITIVE);
     private static final Queue<Text> MESSAGE_BUFFER = new ConcurrentLinkedQueue<>();
     private static final Text NOT_CONNECTED_TEXT = text("You are not connected, use ")
         .append(text("/awoo connect", WHITE).styled(style -> style

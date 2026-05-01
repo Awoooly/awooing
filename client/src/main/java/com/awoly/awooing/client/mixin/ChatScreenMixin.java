@@ -142,8 +142,9 @@ public abstract class ChatScreenMixin extends net.minecraft.client.gui.screen.Sc
         lastEmojiPartial = partial;
 
         final int finalColonPos = colonPos;
+        final String partialLower = partial.toLowerCase();
 
-        List<Suggestion> suggestions = SpriteRegistry.getAll().keySet().stream().filter(name -> name.startsWith(partial))
+        List<Suggestion> suggestions = SpriteRegistry.getAll().keySet().stream().filter(name -> name.startsWith(partialLower))
                 .limit(10)
                 .map(name -> new Suggestion(StringRange.between(finalColonPos, finalColonPos + partial.length() + 1),
                         ":" + name + ":"))
