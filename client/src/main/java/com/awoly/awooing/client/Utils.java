@@ -12,6 +12,8 @@ import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.security.KeyStore;
 import java.util.Arrays;
 import java.util.Collection;
@@ -110,6 +112,46 @@ public class Utils {
                 client.player.sendMessage(msg, false);
             }
         }
+    }
+
+    public static int connectToHost(String ip, int port) {
+        if (isClientConnected()) {
+            renderMsg(INFO_COLOR, "You are already connected to the server");
+            return Command.SINGLE_SUCCESS;
+        }
+
+        URI uri;
+
+        try {
+            uri = new URI("wss://" + ip + ":" + port);
+        } catch (URISyntaxException e) {
+            renderMsg(INFO_COLOR, "Invalid address");
+            return Command.SINGLE_SUCCESS;
+        }
+
+        if (canDisplayMessage()) {
+            renderMsg(INFO_COLOR, "Connecting...");
+        }
+
+        if (Awooing.getInstance().chatClient != null && !Awooing.getInstance().chatClient.isClosed()) {
+            Awooing.getInstance().chatClient.close();
+        }
+
+        Awooing.getInstance().chatClient = new ChatClient(uri);
+
+        try {
+            configureSsl(Awooing.getInstance().chatClient, "client-truststore.p12", "password");
+        } catch (Exception e) {
+            LOGGER.error("Failed to configure SSL", e);
+            if (canDisplayMessage()) {
+                renderMsg(INFO_COLOR, "Failed to configure SSL: " + e.getMessage());
+            }
+            return Command.SINGLE_SUCCESS;
+        }
+
+        Awooing.getInstance().chatClient.connect();
+
+        return Command.SINGLE_SUCCESS;
     }
 
     public static boolean canDisplayMessage() {
