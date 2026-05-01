@@ -71,7 +71,8 @@ public class SpriteRegistry {
 
     private static void registerFromStream(String name, InputStream stream, SpriteSource source) {
         try {
-            if (source == SpriteSource.EMOJI && SPRITES_BY_NAME.containsKey(name)) {
+            String nameKey = name.toLowerCase();
+            if (source == SpriteSource.EMOJI && SPRITES_BY_NAME.containsKey(nameKey)) {
                 Awooing.LOGGER.info("Emoji {} already registered, skipping", name);
                 return;
             }
@@ -91,11 +92,11 @@ public class SpriteRegistry {
                 }
                 Sprite emoji = Sprite.emoji(name, id, texture);
 
-                Sprite prev = SPRITES_BY_NAME.putIfAbsent(name, emoji);
+                Sprite prev = SPRITES_BY_NAME.putIfAbsent(nameKey, emoji);
                 if (prev == null) {
                     Sprite existingById = SPRITES_BY_ID.putIfAbsent(id, emoji);
                     if (existingById != null) {
-                        SPRITES_BY_NAME.remove(name, emoji);
+                        SPRITES_BY_NAME.remove(nameKey, emoji);
                         Awooing.LOGGER.warn("Sprite codepoint collision (id={}) while registering {}", id, name);
                     }
                 } else {
@@ -139,7 +140,8 @@ public class SpriteRegistry {
     }
 
     public static Sprite getByName(String token) {
-        return SPRITES_BY_NAME.get(token);
+        // Case-insensitive lookup: convert to lowercase for consistency
+        return token != null ? SPRITES_BY_NAME.get(token.toLowerCase()) : null;
     }
 
     public static Sprite getById(int id) {
