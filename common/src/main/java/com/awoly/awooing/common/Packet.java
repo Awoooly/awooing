@@ -11,8 +11,9 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import java.lang.reflect.Type;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public interface Packet {
@@ -82,12 +83,12 @@ public interface Packet {
         return new RoomJoinPacket(roomId, sender, color, null);
     }
 
-    static Packet requestRoomList() {
-        return new RoomListPacket(List.of(), null);
+    static Packet requestRoomList(int page) {
+        return new RoomListPacket(Map.of(), page, null);
     }
 
-    static Packet roomList(List<String> roomNames, boolean truncated) {
-        return new RoomListPacket(roomNames, truncated);
+    static Packet roomList(Map<String, Integer> rooms, int page, int totalPages) {
+        return new RoomListPacket(rooms, page, totalPages);
     }
 
     static Packet invite(String roomId, String target) {
@@ -269,17 +270,17 @@ public interface Packet {
         }
     }
 
-    record RoomListPacket(List<String> roomNames, Boolean truncated) implements Packet {
+    record RoomListPacket(Map<String, Integer> rooms, Integer page, Integer totalPages) implements Packet {
         public PacketType type() {
             return PacketType.ROOM_LIST;
         }
 
         public RoomListPacket {
-            roomNames = roomNames == null ? List.of() : List.copyOf(roomNames);
+            rooms = rooms == null ? Map.of() : Collections.unmodifiableMap(new LinkedHashMap<>(rooms));
         }
 
-        public List<String> roomNames() {
-            return List.copyOf(roomNames);
+        public Map<String, Integer> rooms() {
+            return rooms;
         }
     }
 

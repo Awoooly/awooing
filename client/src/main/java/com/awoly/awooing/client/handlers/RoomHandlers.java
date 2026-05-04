@@ -2,8 +2,8 @@ package com.awoly.awooing.client.handlers;
 
 import static com.awoly.awooing.client.Utils.CHAT_COLOR;
 import static com.awoly.awooing.client.Utils.INFO_COLOR;
-import static com.awoly.awooing.client.Utils.WHITE;
 import static com.awoly.awooing.client.Utils.getUsername;
+import static com.awoly.awooing.client.Utils.prepareCmd;
 import static com.awoly.awooing.client.Utils.renderMsg;
 import static com.awoly.awooing.client.Utils.setAwooing;
 import static com.awoly.awooing.client.Utils.text;
@@ -15,8 +15,7 @@ import com.awoly.awooing.client.Utils;
 import com.awoly.awooing.client.config.ConfigManager;
 import com.awoly.awooing.common.Packet;
 import java.util.List;
-import net.minecraft.text.ClickEvent;
-import net.minecraft.text.HoverEvent;
+import java.util.Map;
 import net.minecraft.text.MutableText;
 
 public final class RoomHandlers {
@@ -32,9 +31,20 @@ public final class RoomHandlers {
     }
 
     public void handleRoomList(Packet.RoomListPacket packet) {
-        String roomNames = String.join(", ", packet.roomNames());
-        String suffix = Boolean.TRUE.equals(packet.truncated()) ? " (showing first 10)" : "";
-        renderMsg(INFO_COLOR, "Public rooms: " + roomNames + suffix);
+        MutableText message = text("Public rooms (page " + packet.page() + "/" + packet.totalPages() + "): ");
+
+        int index = 0;
+        for (Map.Entry<String, Integer> room : packet.rooms().entrySet()) {
+            if (index > 0) {
+                message.append(text(", ", INFO_COLOR));
+            }
+
+            message.append(prepareCmd(room.getKey(), "/awoo join " + room.getKey(), "Click to join"));
+            message.append(text(" (" + room.getValue() + ")", INFO_COLOR));
+            index++;
+        }
+
+        renderMsg(INFO_COLOR, message);
     }
 
     public void handleUserJoinedRoom(Packet.RoomJoinPacket packet) {
@@ -56,21 +66,13 @@ public final class RoomHandlers {
 
             if (Awooing.getInstance().chatClient.getJoinedRooms().size() == 1) {
                 MutableText hintText = text("Use ")
-                    .append(text("/a", WHITE).styled(style -> style
-                        .withClickEvent(new ClickEvent.SuggestCommand("/a "))
-                        .withHoverEvent(new HoverEvent.ShowText(text("Click to prepare command")))))
+                    .append(prepareCmd("/a", "/a "))
                     .append(text(" <message> to send a message to the room, or "))
-                    .append(text("/chat awoo", WHITE).styled(style -> style
-                        .withClickEvent(new ClickEvent.SuggestCommand("/chat awoo"))
-                        .withHoverEvent(new HoverEvent.ShowText(text("Click to prepare command")))))
+                    .append(prepareCmd("/chat awoo", "/chat awoo"))
                     .append(text(" to toggle the chat, "))
-                    .append(text("/awoo list", WHITE).styled(style -> style
-                        .withClickEvent(new ClickEvent.SuggestCommand("/awoo list "))
-                        .withHoverEvent(new HoverEvent.ShowText(text("Click to prepare command")))))
+                    .append(prepareCmd("/awoo list", "/awoo list "))
                     .append(text(" to see members, and "))
-                    .append(text("/awoo leave", WHITE).styled(style -> style
-                        .withClickEvent(new ClickEvent.SuggestCommand("/awoo leave "))
-                        .withHoverEvent(new HoverEvent.ShowText(text("Click to prepare command")))))
+                    .append(prepareCmd("/awoo leave", "/awoo leave "))
                     .append(text(" to leave the room."));
 
                 renderMsg(roomId, INFO_COLOR, hintText);
@@ -136,17 +138,11 @@ public final class RoomHandlers {
 
     private void sendLeaderHint(String roomId) {
         MutableText hintText = text("Use ")
-            .append(text("/awoo kick", WHITE).styled(style -> style
-                .withClickEvent(new ClickEvent.SuggestCommand("/awoo kick "))
-                .withHoverEvent(new HoverEvent.ShowText(text("Click to prepare command")))))
+            .append(prepareCmd("/awoo kick", "/awoo kick "))
             .append(text(" to remove users, "))
-            .append(text("/awoo host", WHITE).styled(style -> style
-                .withClickEvent(new ClickEvent.SuggestCommand("/awoo host "))
-                .withHoverEvent(new HoverEvent.ShowText(text("Click to prepare command")))))
+            .append(prepareCmd("/awoo host", "/awoo host "))
             .append(text(" to transfer leadership, and "))
-            .append(text("/awoo roomprivacy", WHITE).styled(style -> style
-                .withClickEvent(new ClickEvent.SuggestCommand("/awoo roomprivacy " + roomId + " "))
-                .withHoverEvent(new HoverEvent.ShowText(text("Click to prepare command")))))
+            .append(prepareCmd("/awoo roomprivacy", "/awoo roomprivacy " + roomId + " "))
             .append(text(" to change room settings."));
 
         renderMsg(INFO_COLOR, hintText);

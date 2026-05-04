@@ -87,7 +87,10 @@ public class AwooCommand {
                         .executes(ctx -> createRoom(getString(ctx, "name"), getString(ctx, "privacy"), null))
                         .then(argument("password", word())
                             .executes(ctx -> createRoom(getString(ctx, "name"), getString(ctx, "privacy"), getString(ctx, "password")))))))
-            .then(literal("publicrooms").executes(ctx -> publicRooms()))
+            .then(literal("publicrooms")
+                .executes(ctx -> publicRooms())
+                .then(argument("page", integer(1))
+                    .executes(ctx -> publicRooms(getInteger(ctx, "page")))))
             .then(literal("join")
                 .executes(ctx -> showUsage("/awoo join <room> [password]"))
                 .then(argument("room", word())
@@ -565,11 +568,15 @@ public class AwooCommand {
     }
 
     private static int publicRooms() {
+        return publicRooms(1);
+    }
+
+    private static int publicRooms(int page) {
         if (!requireConnected()) {
             return Command.SINGLE_SUCCESS;
         }
 
-        Awooing.getInstance().chatClient.sendPacket(Packet.requestRoomList());
+        Awooing.getInstance().chatClient.sendPacket(Packet.requestRoomList(page));
         return Command.SINGLE_SUCCESS;
     }
 
