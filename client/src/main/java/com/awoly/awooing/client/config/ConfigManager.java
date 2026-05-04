@@ -29,6 +29,10 @@ public class ConfigManager {
                 config.lastPort = loaded.lastPort;
                 config.autoConnect = loaded.autoConnect;
                 config.userColor = loaded.userColor;
+                config.showedStartupWelcomeHint = loaded.showedStartupWelcomeHint;
+                config.showedRoomJoinHint = loaded.showedRoomJoinHint;
+                config.showedLeaderHint = loaded.showedLeaderHint;
+                config.showedConnectedHint = loaded.showedConnectedHint;
             }
         } catch (Exception e) {
             LOGGER.error("Failed to load config, using defaults", e);

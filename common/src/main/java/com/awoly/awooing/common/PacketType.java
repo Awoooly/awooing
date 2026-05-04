@@ -3,9 +3,13 @@ package com.awoly.awooing.common;
 public enum PacketType {
     MSG("msg"),
     INFO("info"),
+    ANNOUNCEMENT("announcement"),
+    PERMISSION("permission"),
     SESSION_CHALLENGE("session_challenge"),
     AUTH_RESPONSE("auth_response"),
+    CONNECTED("connected"),
     ROOM_CREATE("room_create"),
+    ROOM_CREATED("room_created"),
     ROOM_JOIN("room_join"),
     ROOM_LEAVE("room_leave"),
     ROOM_LIST("room_list"),
@@ -17,11 +21,13 @@ public enum PacketType {
     FORWARD_LIST("forward_list"),
     FORWARD_IS_ALLOWED("forward_is_allowed"),
     FORWARD_REQUEST("forward_request"),
+    SERVER_INFO("server_info"),
     CHANGE_COLOR("change_color"),
     CHANGE_PRIVACY("change_privacy"),
     CHANGE_PASSWORD("change_password"),
     ROOM_INVITE("room_invite"),
     KICK("kick"),
+    OP("op"),
     PRIVATE_MSG("private_msg");
 
     private final String key;

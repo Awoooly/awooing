@@ -3,8 +3,12 @@ package com.awoly.awooing.client.config;
 import static com.awoly.awooing.client.Awooing.DEFAULT_PORT;
 
 public class ModConfig {
-    public String lastIp = "awooing.me";
+    public String lastIp = "mc.awooing.me";
     public int lastPort = DEFAULT_PORT;
-    public boolean autoConnect = false;
+    public boolean autoConnect = true;
     public int userColor = 0xFFFFFF;
+    public boolean showedStartupWelcomeHint = false;
+    public boolean showedRoomJoinHint = false;
+    public boolean showedLeaderHint = false;
+    public boolean showedConnectedHint = false;
 }

@@ -2,6 +2,7 @@ package com.awoly.awooing.client.command;
 
 import static com.awoly.awooing.client.Utils.INFO_COLOR;
 import static com.awoly.awooing.client.Utils.isClientConnected;
+import static com.awoly.awooing.client.Utils.notConnectedText;
 import static com.awoly.awooing.client.Utils.renderMsg;
 import static com.awoly.awooing.client.Utils.showUsage;
 
@@ -20,7 +21,7 @@ public class ForwardChatCommand {
             .executes(context -> showUsage("/f <message>"))
             .then(ClientCommandManager.argument("message", StringArgumentType.greedyString()).executes(context -> {
                 if (!isClientConnected()) {
-                    renderMsg(INFO_COLOR, "You are not connected to the server");
+                    renderMsg(INFO_COLOR, notConnectedText());
                     return Command.SINGLE_SUCCESS;
                 }
 

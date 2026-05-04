@@ -2,12 +2,17 @@ package com.awoly.awooing.client.command;
 
 import static com.awoly.awooing.client.Awooing.LOGGER;
 import static com.awoly.awooing.client.Utils.INFO_COLOR;
-import static com.awoly.awooing.client.Utils.configureSsl;
+import static com.awoly.awooing.client.Utils.SPRITE_GLYPH_FONT;
+import static com.awoly.awooing.client.Utils.WARN_COLOR;
+import static com.awoly.awooing.client.Utils.connectToHost;
 import static com.awoly.awooing.client.Utils.getActiveRoomId;
 import static com.awoly.awooing.client.Utils.getLedRoomIds;
 import static com.awoly.awooing.client.Utils.getUsername;
 import static com.awoly.awooing.client.Utils.getVersion;
+import static com.awoly.awooing.client.Utils.isAdmin;
 import static com.awoly.awooing.client.Utils.isClientConnected;
+import static com.awoly.awooing.client.Utils.noJoinedRoomText;
+import static com.awoly.awooing.client.Utils.notConnectedText;
 import static com.awoly.awooing.client.Utils.renderMsg;
 import static com.awoly.awooing.client.Utils.showUsage;
 import static com.awoly.awooing.client.Utils.suggestLedRoomUsers;
@@ -29,30 +34,41 @@ import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.lit
 import com.awoly.awooing.client.Awooing;
 import com.awoly.awooing.client.ChatClient;
 import com.awoly.awooing.client.ChatRoom;
+import com.awoly.awooing.client.sprite.Sprite;
+import com.awoly.awooing.client.sprite.SpriteRegistry;
 import com.awoly.awooing.common.CommonUtils;
 import com.awoly.awooing.common.Packet;
 import com.awoly.awooing.common.RoomAccessMode;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
 import java.net.URI;
-import java.net.URISyntaxException;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.registry.RegistryWrapper.WrapperLookup;
+import net.minecraft.text.MutableText;
 
 public class AwooCommand {
+
+    private static final Map<String, Integer> ANNOUNCE_COLORS = Map.of("INFO", INFO_COLOR, "WARN", WARN_COLOR);
 
     public static void register(CommandDispatcher<FabricClientCommandSource> dispatcher, WrapperLookup registryAccess) {
         dispatcher.register(literal("awoo").executes(ctx -> {
             renderMsg(INFO_COLOR, "v" + getVersion());
             return Command.SINGLE_SUCCESS;
         })
-            .then(literal("connect").executes(ctx -> connectToHost(config.lastIp, config.lastPort))
+            .then(literal("status").executes(ctx -> status()))
+            .then(literal("connect").executes(ctx -> connectToHost(config.lastIp, config.lastPort)))
+            .then(literal("changeip")
+                .executes(ctx -> showUsage("/awoo changeip <IP> [Port]"))
                 .then(argument("ip", word())
-                    .executes(ctx -> saveToConfigAndConnect(getString(ctx, "ip"), config.lastPort))
-                    .then(argument("port", integer()).executes(
-                        ctx -> saveToConfigAndConnect(getString(ctx, "ip"), getInteger(ctx, "port"))))))
+                    .executes(ctx -> updateConnectionConfig(getString(ctx, "ip"), null))
+                    .then(argument("port", integer())
+                        .executes(ctx -> updateConnectionConfig(getString(ctx, "ip"), getInteger(ctx, "port"))))))
             .then(literal("roomprivacy")
                 .executes(ctx -> showUsage("/awoo roomprivacy <room> <public|private> [password]"))
                 .then(argument("room", word()).suggests(suggestLedRooms())
@@ -71,7 +87,10 @@ public class AwooCommand {
                         .executes(ctx -> createRoom(getString(ctx, "name"), getString(ctx, "privacy"), null))
                         .then(argument("password", word())
                             .executes(ctx -> createRoom(getString(ctx, "name"), getString(ctx, "privacy"), getString(ctx, "password")))))))
-            .then(literal("publicrooms").executes(ctx -> publicRooms()))
+            .then(literal("publicrooms")
+                .executes(ctx -> publicRooms())
+                .then(argument("page", integer(1))
+                    .executes(ctx -> publicRooms(getInteger(ctx, "page")))))
             .then(literal("join")
                 .executes(ctx -> showUsage("/awoo join <room> [password]"))
                 .then(argument("room", word())
@@ -88,7 +107,22 @@ public class AwooCommand {
                 .executes(ctx -> list(null))
                 .then(argument("room", word()).suggests(suggestRooms())
                     .executes(ctx -> list(getString(ctx, "room")))))
+            .then(literal("info")
+                .requires(ctx -> isAdmin())
+                .executes(ctx -> requestStatus()))
+            .then(literal("announce")
+                .requires(ctx -> isAdmin())
+                .executes(ctx -> showUsage("/awoo announce <color> <msg>"))
+                .then(argument("color", word()).suggests(suggestAnnouncementColors())
+                    .then(argument("announcement", greedyString())
+                        .executes(ctx -> announce(getString(ctx, "color"), getString(ctx, "announcement"))))))
+            .then(literal("op")
+                .requires(ctx -> isAdmin())
+                .executes(ctx -> showUsage("/awoo op <username>"))
+                .then(argument("username", word()).suggests(suggestUsers())
+                    .executes(ctx -> op(getString(ctx, "username")))))
             .then(literal("autoconnect").executes(ctx -> toggleAutoConnect()))
+            .then(literal("emojis").executes(ctx -> listEmojis()))
             .then(literal("disconnect").executes(ctx -> disconnect()))
             .then(literal("leave")
                 .executes(ctx -> leaveRoom(null))
@@ -125,11 +159,40 @@ public class AwooCommand {
                         .executes(ctx -> host(getString(ctx, "user"), getString(ctx, "room")))))));
     }
 
-    private static int saveToConfigAndConnect(String ip, int port) {
+    private static int updateConnectionConfig(String ip, Integer port) {
         config.lastIp = ip;
-        config.lastPort = port;
+        if (port != null) {
+            config.lastPort = port;
+        }
         save();
-        connectToHost(config.lastIp, config.lastPort);
+        renderMsg(INFO_COLOR, "Server set to " + config.lastIp + ":" + config.lastPort);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int status() {
+        Awooing instance = Awooing.getInstance();
+        ChatClient chatClient = instance.chatClient;
+        boolean connected = isClientConnected();
+
+        String endpoint = "unavailable";
+        if (connected && chatClient != null && chatClient.getURI() != null) {
+            URI uri = chatClient.getURI();
+            if (uri.getHost() != null && uri.getPort() >= 0) {
+                endpoint = uri.getHost() + ":" + uri.getPort();
+            } else {
+                endpoint = uri.toString();
+            }
+        }
+
+        String activeRoomId = getActiveRoomId();
+
+        renderMsg(INFO_COLOR, "Status:");
+        renderMsg(null, INFO_COLOR, "- Connected: " + (connected ? "True (" + endpoint + ")" : "False"));
+        renderMsg(null, INFO_COLOR, "- Active room: " + (activeRoomId == null ? "None" : activeRoomId));
+        renderMsg(null, INFO_COLOR, "- Awooing: " + (instance.isAwooing ? "True (" + activeRoomId + ")" : "False"));
+        renderMsg(null, INFO_COLOR, "- Autoconnect: " + (config.autoConnect ? "Enabled" : "Disabled"));
+        renderMsg(null, INFO_COLOR, "- Version: " + getVersion());
+
         return Command.SINGLE_SUCCESS;
     }
 
@@ -137,6 +200,69 @@ public class AwooCommand {
         config.autoConnect = !config.autoConnect;
         save();
         renderMsg(INFO_COLOR, "Autoconnect " + (config.autoConnect ? "enabled" : "disabled"));
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int requestStatus() {
+        if (!requireConnected()) {
+            return Command.SINGLE_SUCCESS;
+        }
+
+        Awooing.getInstance().chatClient.sendPacket(Packet.reqServerInfo());
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int announce(String colorArg, String msg) {
+        if (!requireConnected()) {
+            return Command.SINGLE_SUCCESS;
+        }
+
+        int color;
+        if (colorArg == null || colorArg.isBlank()) {
+            renderMsg(INFO_COLOR, "Invalid color. Expected HEX format like (#)RRGGBB or INFO");
+            return Command.SINGLE_SUCCESS;
+        }
+
+        Integer namedColor = ANNOUNCE_COLORS.get(colorArg.toUpperCase(Locale.ROOT));
+        if (namedColor != null) {
+            color = namedColor;
+        } else {
+            String hex = colorArg.startsWith("#") ? colorArg.substring(1) : colorArg;
+            try {
+                color = Integer.parseInt(hex, 16);
+            } catch (NumberFormatException e) {
+                renderMsg(INFO_COLOR, "Invalid color. Expected HEX format like (#)RRGGBB or INFO");
+                return Command.SINGLE_SUCCESS;
+            }
+        }
+
+        if (msg == null || msg.isBlank()) {
+            renderMsg(INFO_COLOR, "Announcement message is required");
+            return Command.SINGLE_SUCCESS;
+        }
+
+        Awooing.getInstance().chatClient.sendPacket(Packet.announcement(msg, color));
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static SuggestionProvider<FabricClientCommandSource> suggestAnnouncementColors() {
+        return (ctx, builder) -> {
+            String remaining = builder.getRemaining().toUpperCase(Locale.ROOT);
+            for (String suggestion : ANNOUNCE_COLORS.keySet()) {
+                if (suggestion.startsWith(remaining)) {
+                    builder.suggest(suggestion);
+                }
+            }
+            return builder.buildFuture();
+        };
+    }
+
+    private static int op(String username) {
+        if (!requireConnected()) {
+            return Command.SINGLE_SUCCESS;
+        }
+
+        Awooing.getInstance().chatClient.sendPacket(Packet.op(username));
         return Command.SINGLE_SUCCESS;
     }
 
@@ -149,7 +275,7 @@ public class AwooCommand {
 
         if (roomId == null) {
             if (joinedRoomIds.isEmpty()) {
-                renderMsg(INFO_COLOR, "You haven't joined any room");
+                renderMsg(INFO_COLOR, noJoinedRoomText());
                 return Command.SINGLE_SUCCESS;
             }
 
@@ -186,6 +312,26 @@ public class AwooCommand {
             renderMsg(INFO_COLOR, "Disconnecting error. Check logs for details");
         }
 
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int listEmojis() {
+        List<Sprite> emojis = SpriteRegistry.getAll().values().stream()
+            .sorted(Comparator.comparingInt(Sprite::getInternalId))
+            .toList();
+
+        if (emojis.isEmpty()) {
+            renderMsg(INFO_COLOR, "No emojis are currently registered");
+            return Command.SINGLE_SUCCESS;
+        }
+
+        MutableText message = text("Available emojis (" + emojis.size() + "): ");
+        for (Sprite emoji : emojis) {
+            message.append(text(new String(Character.toChars(emoji.getInternalId())))
+                .styled(style -> style.withFont(SPRITE_GLYPH_FONT)));
+        }
+
+        renderMsg(INFO_COLOR, message);
         return Command.SINGLE_SUCCESS;
     }
 
@@ -422,11 +568,15 @@ public class AwooCommand {
     }
 
     private static int publicRooms() {
+        return publicRooms(1);
+    }
+
+    private static int publicRooms(int page) {
         if (!requireConnected()) {
             return Command.SINGLE_SUCCESS;
         }
 
-        Awooing.getInstance().chatClient.sendPacket(Packet.requestRoomList());
+        Awooing.getInstance().chatClient.sendPacket(Packet.requestRoomList(page));
         return Command.SINGLE_SUCCESS;
     }
 
@@ -462,45 +612,9 @@ public class AwooCommand {
         return Command.SINGLE_SUCCESS;
     }
 
-    public static int connectToHost(String ip, int port) {
-        if (isClientConnected()) {
-            renderMsg(INFO_COLOR, "You are already connected to the server");
-            return Command.SINGLE_SUCCESS;
-        }
-
-        URI uri;
-
-        try {
-            uri = new URI("wss://" + ip + ":" + port);
-        } catch (URISyntaxException e) {
-            renderMsg(INFO_COLOR, "Invalid address");
-            return Command.SINGLE_SUCCESS;
-        }
-
-        renderMsg(INFO_COLOR, "Connecting...");
-
-        if (Awooing.getInstance().chatClient != null && !Awooing.getInstance().chatClient.isClosed()) {
-            Awooing.getInstance().chatClient.close();
-        }
-
-        Awooing.getInstance().chatClient = new ChatClient(uri);
-
-        try {
-            configureSsl(Awooing.getInstance().chatClient, "client-truststore.p12", "password");
-        } catch (Exception e) {
-            LOGGER.error("Failed to configure SSL", e);
-            renderMsg(INFO_COLOR, "Failed to configure SSL: " + e.getMessage());
-            return Command.SINGLE_SUCCESS;
-        }
-
-        Awooing.getInstance().chatClient.connect();
-
-        return Command.SINGLE_SUCCESS;
-    }
-
     private static boolean requireConnected() {
         if (!isClientConnected()) {
-            renderMsg(INFO_COLOR, "You are not connected to the server");
+            renderMsg(INFO_COLOR, notConnectedText());
             return false;
         }
         return true;

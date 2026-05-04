@@ -2,6 +2,7 @@ package com.awoly.awooing.client;
 
 import static com.awoly.awooing.client.Awooing.LOGGER;
 import static com.awoly.awooing.client.Utils.INFO_COLOR;
+import static com.awoly.awooing.client.Utils.canDisplayMessage;
 import static com.awoly.awooing.client.Utils.renderMsg;
 import static com.awoly.awooing.client.Utils.setAwooing;
 import static org.java_websocket.framing.CloseFrame.GOING_AWAY;
@@ -13,9 +14,12 @@ import com.awoly.awooing.client.handlers.AuthenticationHandlers;
 import com.awoly.awooing.client.handlers.DirectMessageHandlers;
 import com.awoly.awooing.client.handlers.ForwardingHandlers;
 import com.awoly.awooing.client.handlers.InfoHandlers;
+import com.awoly.awooing.client.handlers.PermissionHandlers;
 import com.awoly.awooing.client.handlers.RoomHandlers;
+import com.awoly.awooing.client.handlers.ServerInfoHandler;
 import com.awoly.awooing.client.handlers.UserHandlers;
 import com.awoly.awooing.common.Packet;
+import com.awoly.awooing.common.PermissionType;
 import java.net.ConnectException;
 import java.net.URI;
 import java.net.UnknownHostException;
@@ -39,12 +43,15 @@ public class ChatClient extends WebSocketClient {
     private final UserHandlers userHandlers = new UserHandlers();
     private final ForwardingHandlers forwardingHandlers = new ForwardingHandlers();
     private final InfoHandlers infoHandlers = new InfoHandlers();
+    private final ServerInfoHandler infoHandler = new ServerInfoHandler();
+    private final PermissionHandlers permissionHandlers = new PermissionHandlers();
     private final AuthenticationHandlers authenticationHandlers = new AuthenticationHandlers(this, PROTOCOL_VERSION);
     private final DirectMessageHandlers directMessageHandlers = new DirectMessageHandlers();
 
     public ChatClient(URI serverUri) {
         super(serverUri);
         setConnectionLostTimeout(CONNECTION_LOST_TIMEOUT_DURATION);
+        registerHandler(Packet.RoomCreatedPacket.class, roomHandlers::handleRoomCreated);
         registerHandler(Packet.RoomJoinPacket.class, roomHandlers::handleUserJoinedRoom);
         registerHandler(Packet.RoomLeavePacket.class, roomHandlers::handleUserLeftRoom);
         registerHandler(Packet.RoomListPacket.class, roomHandlers::handleRoomList);
@@ -55,6 +62,9 @@ public class ChatClient extends WebSocketClient {
         registerHandler(Packet.ForwardMsgPacket.class, forwardingHandlers::handleForwardMsg);
         registerHandler(Packet.ForwardIsAllowedPacket.class, forwardingHandlers::handleForwardIsAllowed);
         registerHandler(Packet.InfoPacket.class, infoHandlers::handleInfo);
+        registerHandler(Packet.ServerInfoPacket.class, infoHandler::handleInfo);
+        registerHandler(Packet.PermissionPacket.class, permissionHandlers::handlePermission);
+        registerHandler(Packet.ConnectedPacket.class, authenticationHandlers::handleConnected);
         registerHandler(Packet.SessionChallengePacket.class, authenticationHandlers::handleSessionChallenge);
         registerHandler(Packet.PrivateMsgPacket.class, directMessageHandlers::handlePrivateMsg);
     }
@@ -94,14 +104,19 @@ public class ChatClient extends WebSocketClient {
         LOGGER.debug("Connection closed: {} ({})", reason, code);
         joinedRooms.clear();
         Awooing.getInstance().currentRoomId = null;
+        Awooing.getInstance().permissionType = PermissionType.USER;
         setAwooing(false);
 
-        switch (code) {
-            case NEVER_CONNECTED -> renderMsg(INFO_COLOR, "Connecting to server failed");
-            case NORMAL          -> { }
-            case GOING_AWAY      -> renderMsg(INFO_COLOR, "Server is shutting down, disconnecting");
-            case REFUSE          -> renderMsg(INFO_COLOR, reason);
-            default              -> renderMsg(INFO_COLOR, "Connection lost");
+        String message = switch (code) {
+            case NEVER_CONNECTED -> canDisplayMessage() ? "Connecting to server failed" : null;
+            case NORMAL          -> null;
+            case GOING_AWAY      -> "Server is shutting down, disconnecting";
+            case REFUSE          -> reason;
+            default              -> "Connection lost";
+        };
+
+        if (message != null) {
+            renderMsg(INFO_COLOR, message);
         }
     }
 

@@ -3,6 +3,8 @@ package com.awoly.awooing.client.command;
 import static com.awoly.awooing.client.Utils.INFO_COLOR;
 import static com.awoly.awooing.client.Utils.getActiveRoomId;
 import static com.awoly.awooing.client.Utils.isClientConnected;
+import static com.awoly.awooing.client.Utils.noJoinedRoomText;
+import static com.awoly.awooing.client.Utils.notConnectedText;
 import static com.awoly.awooing.client.Utils.renderMsg;
 import static com.awoly.awooing.client.Utils.showUsage;
 import static com.awoly.awooing.client.Utils.suggestRooms;
@@ -24,7 +26,7 @@ public class AwooChatCommand {
                 .suggests(suggestRooms())
                 .executes(context -> {
                     if (!isClientConnected()) {
-                        renderMsg(INFO_COLOR, "You are not connected to the server");
+                        renderMsg(INFO_COLOR, notConnectedText());
                         return Command.SINGLE_SUCCESS;
                     }
 
@@ -44,7 +46,7 @@ public class AwooChatCommand {
                     }
 
                     if (roomId == null) {
-                        renderMsg(INFO_COLOR, "You haven't joined any room");
+                        renderMsg(INFO_COLOR, noJoinedRoomText());
                         return Command.SINGLE_SUCCESS;
                     }
 

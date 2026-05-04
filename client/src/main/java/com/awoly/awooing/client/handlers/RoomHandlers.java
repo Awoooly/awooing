@@ -3,22 +3,48 @@ package com.awoly.awooing.client.handlers;
 import static com.awoly.awooing.client.Utils.CHAT_COLOR;
 import static com.awoly.awooing.client.Utils.INFO_COLOR;
 import static com.awoly.awooing.client.Utils.getUsername;
+import static com.awoly.awooing.client.Utils.prepareCmd;
 import static com.awoly.awooing.client.Utils.renderMsg;
 import static com.awoly.awooing.client.Utils.setAwooing;
 import static com.awoly.awooing.client.Utils.text;
+import static com.awoly.awooing.client.config.ConfigManager.config;
 
 import com.awoly.awooing.client.Awooing;
 import com.awoly.awooing.client.ChatRoom;
 import com.awoly.awooing.client.Utils;
+import com.awoly.awooing.client.config.ConfigManager;
 import com.awoly.awooing.common.Packet;
 import java.util.List;
+import java.util.Map;
+import net.minecraft.text.MutableText;
 
 public final class RoomHandlers {
 
+    public void handleRoomCreated(Packet.RoomCreatedPacket packet) {
+        String roomId = packet.roomId();
+        Awooing.getInstance().currentRoomId = roomId;
+        renderMsg(roomId, INFO_COLOR, "Room created");
+
+        if (!ConfigManager.config.showedLeaderHint) {
+            sendLeaderHint(roomId);
+        }
+    }
+
     public void handleRoomList(Packet.RoomListPacket packet) {
-        String roomNames = String.join(", ", packet.roomNames());
-        String suffix = Boolean.TRUE.equals(packet.truncated()) ? " (showing first 10)" : "";
-        renderMsg(INFO_COLOR, "Public rooms: " + roomNames + suffix);
+        MutableText message = text("Public rooms (page " + packet.page() + "/" + packet.totalPages() + "): ");
+
+        int index = 0;
+        for (Map.Entry<String, Integer> room : packet.rooms().entrySet()) {
+            if (index > 0) {
+                message.append(text(", ", INFO_COLOR));
+            }
+
+            message.append(prepareCmd(room.getKey(), "/awoo join " + room.getKey(), "Click to join"));
+            message.append(text(" (" + room.getValue() + ")", INFO_COLOR));
+            index++;
+        }
+
+        renderMsg(INFO_COLOR, message);
     }
 
     public void handleUserJoinedRoom(Packet.RoomJoinPacket packet) {
@@ -33,6 +59,27 @@ public final class RoomHandlers {
 
         if (sender != null && sender.equals(getUsername()) && Awooing.getInstance().currentRoomId == null) {
             Awooing.getInstance().currentRoomId = roomId;
+
+            if (config.showedRoomJoinHint) {
+                return;
+            }
+
+            if (Awooing.getInstance().chatClient.getJoinedRooms().size() == 1) {
+                MutableText hintText = text("Use ")
+                    .append(prepareCmd("/a", "/a "))
+                    .append(text(" <message> to send a message to the room, or "))
+                    .append(prepareCmd("/chat awoo", "/chat awoo"))
+                    .append(text(" to toggle the chat, "))
+                    .append(prepareCmd("/awoo list", "/awoo list "))
+                    .append(text(" to see members, and "))
+                    .append(prepareCmd("/awoo leave", "/awoo leave "))
+                    .append(text(" to leave the room."));
+
+                renderMsg(roomId, INFO_COLOR, hintText);
+
+                ConfigManager.config.showedRoomJoinHint = true;
+                ConfigManager.save();
+            }
         }
     }
 
@@ -81,11 +128,26 @@ public final class RoomHandlers {
 
         room.setLeader(target.equals(getUsername()));
 
-        String message = target.equals(getUsername())
-            ? "You are now the leader"
-            : target + " is the new leader";
+        if (target.equals(getUsername())) {
+            renderMsg(packet.roomId(), INFO_COLOR, "You are now the leader");
+            sendLeaderHint(packet.roomId());
+        } else {
+            renderMsg(packet.roomId(), INFO_COLOR, target + " is the new leader");
+        }
+    }
 
-        renderMsg(packet.roomId(), INFO_COLOR, message);
+    private void sendLeaderHint(String roomId) {
+        MutableText hintText = text("Use ")
+            .append(prepareCmd("/awoo kick", "/awoo kick "))
+            .append(text(" to remove users, "))
+            .append(prepareCmd("/awoo host", "/awoo host "))
+            .append(text(" to transfer leadership, and "))
+            .append(prepareCmd("/awoo roomprivacy", "/awoo roomprivacy " + roomId + " "))
+            .append(text(" to change room settings."));
+
+        renderMsg(INFO_COLOR, hintText);
+        ConfigManager.config.showedLeaderHint = true;
+        ConfigManager.save();
     }
 
     public void handleMsg(Packet.MsgPacket packet) {

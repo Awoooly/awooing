@@ -1,6 +1,6 @@
 package com.awoly.awooing.client.mixin;
 
-import com.awoly.awooing.client.emoji.EmojiSubstitutingVisitable;
+import com.awoly.awooing.client.sprite.SpriteSubstitutingVisitable;
 import net.minecraft.client.font.TextHandler;
 import net.minecraft.text.StringVisitable;
 import org.spongepowered.asm.mixin.Mixin;
@@ -23,6 +23,6 @@ public abstract class TextHandlerMixin {
         if (!text.getString().contains(":")) {
             return text;
         }
-        return new EmojiSubstitutingVisitable(text);
+        return new SpriteSubstitutingVisitable(text);
     }
 }

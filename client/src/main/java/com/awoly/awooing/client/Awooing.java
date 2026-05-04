@@ -6,9 +6,11 @@ import com.awoly.awooing.client.command.AwooMessageCommand;
 import com.awoly.awooing.client.command.AwooReplyCommand;
 import com.awoly.awooing.client.command.ForwardChatCommand;
 import com.awoly.awooing.client.config.ConfigManager;
-import com.awoly.awooing.client.emoji.EmojiRegistry;
 import com.awoly.awooing.client.event.ChatListener;
 import com.awoly.awooing.client.event.CommandListener;
+import com.awoly.awooing.client.event.JoinListener;
+import com.awoly.awooing.client.sprite.SpriteRegistry;
+import com.awoly.awooing.common.PermissionType;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import org.slf4j.Logger;
@@ -19,6 +21,7 @@ public class Awooing implements ClientModInitializer {
     private static Awooing INSTANCE;
     public ChatClient chatClient;
     public boolean isAwooing;
+    public PermissionType permissionType = PermissionType.USER;
     public String forwardAs;
     public String lastPrivateSender;
     public String currentRoomId;
@@ -29,7 +32,7 @@ public class Awooing implements ClientModInitializer {
     public void onInitializeClient() {
         INSTANCE = this;
         ConfigManager.load();
-        EmojiRegistry.initialize();
+        SpriteRegistry.initialize();
 
         ClientCommandRegistrationCallback.EVENT.register(AwooCommand::register);
         ClientCommandRegistrationCallback.EVENT.register(AwooChatCommand::register);
@@ -39,10 +42,14 @@ public class Awooing implements ClientModInitializer {
 
         ChatListener.register();
         CommandListener.register();
-        // DisconnectListener.register();
+        JoinListener.register();
 
         if (ConfigManager.config.autoConnect && !ConfigManager.config.lastIp.isBlank()) {
-            AwooCommand.connectToHost(ConfigManager.config.lastIp, ConfigManager.config.lastPort);
+            Utils.connectToHost(ConfigManager.config.lastIp, ConfigManager.config.lastPort);
+        }
+
+        if (!ConfigManager.config.autoConnect && !ConfigManager.config.showedStartupWelcomeHint) {
+            Utils.sendConnectHint();
         }
     }
 

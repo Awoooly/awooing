@@ -11,8 +11,9 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import java.lang.reflect.Type;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public interface Packet {
@@ -39,8 +40,24 @@ public interface Packet {
         return new SessionChallengePacket(serverId);
     }
 
+    static Packet permissions(PermissionType permissionType) {
+        return new PermissionPacket(permissionType, null);
+    }
+
+    static Packet permissions(PermissionType permissionType, String message) {
+        return new PermissionPacket(permissionType, message);
+    }
+
     static Packet authResponse(String username, int color, int protocolVersion, int clientVersion) {
         return new AuthResponsePacket(username, color, protocolVersion, clientVersion);
+    }
+
+    static Packet connected() {
+        return new ConnectedPacket();
+    }
+
+    static Packet roomCreated(String roomId) {
+        return new RoomCreatedPacket(roomId);
     }
 
     // roomPassword may be null for public rooms
@@ -66,12 +83,12 @@ public interface Packet {
         return new RoomJoinPacket(roomId, sender, color, null);
     }
 
-    static Packet requestRoomList() {
-        return new RoomListPacket(List.of(), null);
+    static Packet requestRoomList(int page) {
+        return new RoomListPacket(Map.of(), page, null);
     }
 
-    static Packet roomList(List<String> roomNames, boolean truncated) {
-        return new RoomListPacket(roomNames, truncated);
+    static Packet roomList(Map<String, Integer> rooms, int page, int totalPages) {
+        return new RoomListPacket(rooms, page, totalPages);
     }
 
     static Packet invite(String roomId, String target) {
@@ -122,6 +139,14 @@ public interface Packet {
         return new ForwardRequestPacket(target);
     }
 
+    static Packet reqServerInfo() {
+        return new ServerInfoPacket(null, null);
+    }
+
+    static Packet serverInfo(int usercount, int roomCount) {
+        return new ServerInfoPacket(usercount, roomCount);
+    }
+
     static Packet reqForwardList() {
         return new ForwardListPacket();
     }
@@ -138,6 +163,10 @@ public interface Packet {
         return new KickPacket(target, roomId);
     }
 
+    static Packet op(String target) {
+        return new OpPacket(target);
+    }
+
     static Packet info(String msg) {
         return new InfoPacket(msg, null, null, null);
     }
@@ -152,6 +181,10 @@ public interface Packet {
 
     static Packet urlInfo(String msg, String url) {
         return new InfoPacket(msg, null, null, url);
+    }
+
+    static Packet announcement(String msg, int color) {
+        return new AnnouncementPacket(msg, color);
     }
 
     static Packet privateMsg(String target, String msg) {
@@ -175,21 +208,51 @@ public interface Packet {
         }
     }
 
+    record AnnouncementPacket(String msg, Integer color) implements Packet {
+        public PacketType type() {
+            return PacketType.ANNOUNCEMENT;
+        }
+    }
+
     record SessionChallengePacket(String serverId) implements Packet {
         public PacketType type() {
             return PacketType.SESSION_CHALLENGE;
         }
     }
 
-    record AuthResponsePacket(String username, Integer color, Integer protocolVersion, Integer clientVersion) implements Packet {
+    // message is optional and can be displayed by the client when present
+    record PermissionPacket(PermissionType permissionType, String message) implements Packet {
+        public PacketType type() {
+            return PacketType.PERMISSION;
+        }
+    }
+
+    record AuthResponsePacket(
+        String username, 
+        Integer color, 
+        Integer protocolVersion, 
+        Integer clientVersion
+    ) implements Packet {
         public PacketType type() {
             return PacketType.AUTH_RESPONSE;
+        }
+    }
+
+    record ConnectedPacket() implements Packet {
+        public PacketType type() {
+            return PacketType.CONNECTED;
         }
     }
 
     record RoomCreatePacket(String roomId, String roomName, RoomAccessMode roomAccessMode, String roomPassword) implements Packet {
         public PacketType type() {
             return PacketType.ROOM_CREATE;
+        }
+    }
+
+    record RoomCreatedPacket(String roomId) implements Packet {
+        public PacketType type() {
+            return PacketType.ROOM_CREATED;
         }
     }
 
@@ -207,17 +270,17 @@ public interface Packet {
         }
     }
 
-    record RoomListPacket(List<String> roomNames, Boolean truncated) implements Packet {
+    record RoomListPacket(Map<String, Integer> rooms, Integer page, Integer totalPages) implements Packet {
         public PacketType type() {
             return PacketType.ROOM_LIST;
         }
 
         public RoomListPacket {
-            roomNames = roomNames == null ? List.of() : List.copyOf(roomNames);
+            rooms = rooms == null ? Map.of() : Collections.unmodifiableMap(new LinkedHashMap<>(rooms));
         }
 
-        public List<String> roomNames() {
-            return List.copyOf(roomNames);
+        public Map<String, Integer> rooms() {
+            return rooms;
         }
     }
 
@@ -278,6 +341,13 @@ public interface Packet {
         }
     }
 
+    // usercount and roomCount are null on request, present on response
+    record ServerInfoPacket(Integer usercount, Integer roomCount) implements Packet {
+        public PacketType type() {
+            return PacketType.SERVER_INFO;
+        }
+    }
+
     // username null on client->server, present on server->client
     record ChangeColorPacket(String username, Integer color) implements Packet {
         public PacketType type() {
@@ -306,6 +376,12 @@ public interface Packet {
     record KickPacket(String target, String roomId) implements Packet {
         public PacketType type() {
             return PacketType.KICK;
+        }
+    }
+
+    record OpPacket(String target) implements Packet {
+        public PacketType type() {
+            return PacketType.OP;
         }
     }
 
@@ -360,9 +436,13 @@ public interface Packet {
             return switch (type) {
                 case MSG              -> ctx.deserialize(obj, MsgPacket.class);
                 case INFO             -> ctx.deserialize(obj, InfoPacket.class);
+                case ANNOUNCEMENT     -> ctx.deserialize(obj, AnnouncementPacket.class);
+                case PERMISSION       -> ctx.deserialize(obj, PermissionPacket.class);
                 case SESSION_CHALLENGE -> ctx.deserialize(obj, SessionChallengePacket.class);
                 case AUTH_RESPONSE    -> ctx.deserialize(obj, AuthResponsePacket.class);
+                case CONNECTED        -> ctx.deserialize(obj, ConnectedPacket.class);
                 case ROOM_CREATE      -> ctx.deserialize(obj, RoomCreatePacket.class);
+                case ROOM_CREATED     -> ctx.deserialize(obj, RoomCreatedPacket.class);
                 case ROOM_JOIN        -> ctx.deserialize(obj, RoomJoinPacket.class);
                 case ROOM_LEAVE       -> ctx.deserialize(obj, RoomLeavePacket.class);
                 case ROOM_LIST        -> ctx.deserialize(obj, RoomListPacket.class);
@@ -374,11 +454,13 @@ public interface Packet {
                 case FORWARD_LIST     -> ctx.deserialize(obj, ForwardListPacket.class);
                 case FORWARD_IS_ALLOWED -> ctx.deserialize(obj, ForwardIsAllowedPacket.class);
                 case FORWARD_REQUEST  -> ctx.deserialize(obj, ForwardRequestPacket.class);
+                case SERVER_INFO            -> ctx.deserialize(obj, ServerInfoPacket.class);
                 case CHANGE_COLOR     -> ctx.deserialize(obj, ChangeColorPacket.class);
                 case CHANGE_PRIVACY   -> ctx.deserialize(obj, ChangePrivacyPacket.class);
                 case CHANGE_PASSWORD  -> ctx.deserialize(obj, ChangePasswordPacket.class);
                 case ROOM_INVITE      -> ctx.deserialize(obj, RoomInvitePacket.class);
                 case KICK             -> ctx.deserialize(obj, KickPacket.class);
+                case OP               -> ctx.deserialize(obj, OpPacket.class);
                 case PRIVATE_MSG      -> ctx.deserialize(obj, PrivateMsgPacket.class);
             };
         }

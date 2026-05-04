@@ -4,12 +4,16 @@ import static com.awoly.awooing.client.Awooing.LOGGER;
 import static com.awoly.awooing.client.Awooing.getInstance;
 // joinedRooms accessed via Awooing.getInstance().chatClient.getJoinedRooms()
 
+import com.awoly.awooing.client.config.ConfigManager;
+import com.awoly.awooing.common.PermissionType;
 import com.awoly.awooing.common.RoomAccessMode;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.security.KeyStore;
 import java.util.Arrays;
 import java.util.Collection;
@@ -17,13 +21,17 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.regex.Pattern;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.text.ClickEvent;
+import net.minecraft.text.HoverEvent;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
 import net.minecraft.text.StyleSpriteSource;
@@ -37,24 +45,47 @@ public class Utils {
     public static final int INFO_COLOR = 0xFCFC00;
     public static final int CHAT_COLOR = 0xA8A9FB;
     public static final int PRIVATE_COLOR = 0xFC7DFC;
+    public static final int WARN_COLOR = 0xFC465C;
     public static final int WHITE = 0xFFFFFF;
-    public static final Font EMOJI_FONT = new StyleSpriteSource.Font(Identifier.of("awooing", "emoji_font"));
-    public static final Font EMOJI_GLYPH_FONT = new StyleSpriteSource.Font(
-            Identifier.of("awooing", "emoji_glyph_font"));
-    public static final Pattern EMOJI_PATTERN = Pattern.compile(":([a-z0-9_]+):");
 
+    public static final Font SPRITE_FONT = new StyleSpriteSource.Font(Identifier.of("awooing", "emoji_font"));
+    public static final Font SPRITE_GLYPH_FONT = new StyleSpriteSource.Font(
+            Identifier.of("awooing", "emoji_glyph_font"));
+    public static final Pattern EMOJI_PATTERN = Pattern.compile(":([a-zA-Z0-9_]+):", Pattern.CASE_INSENSITIVE);
+
+    private static final Queue<Text> MESSAGE_BUFFER = new ConcurrentLinkedQueue<>();
     private static final String[] AWOO_COMMAND_PREFIXES = new String[]{"/a ", "/amsg ", "/ar ", "/f a "};
+
+    private static final Text NOT_CONNECTED_TEXT = text("You are not connected, use ")
+        .append(prepareCmd("/awoo connect", "/awoo connect"))
+        .append(text(" to connect"));
+    private static final Text NO_JOINED_ROOM_TEXT = text("You haven't joined any room. Use ")
+        .append(prepareCmd("/awoo join", "/awoo join "))
+        .append(text(" <room> to join a room or "))
+        .append(prepareCmd("/awoo create", "/awoo create "))
+        .append(text(" <name> to host one yourself. Use "))
+        .append(prepareCmd("/awoo publicrooms", "/awoo publicrooms"))
+        .append(text(" to browse public rooms."));
 
     public static void renderMsg(String prefix, TextColor color, Text message) {
         MinecraftClient.getInstance().execute(() -> {
-            if (MinecraftClient.getInstance().player == null) {
-                LOGGER.info("[{}] {}", prefix, message.getString());
+            String normalizedPrefix = (prefix == null || prefix.isBlank()) ? null : prefix;
+
+            MutableText base = normalizedPrefix == null
+                ? message.copy()
+                : Text.literal("[" + normalizedPrefix + "] ")
+                    .setStyle(Style.EMPTY.withColor(color))
+                    .append(message);
+
+            Text transformed = Text.empty()
+                .setStyle(Style.EMPTY.withFont(SPRITE_FONT).withColor(color))
+                .append(base);
+
+            if (!canDisplayMessage()) {
+                LOGGER.info("Can't display message, saving to buffer");
+                MESSAGE_BUFFER.add(transformed);
                 return;
             }
-
-            Text transformed = Text.literal("[" + prefix + "] ")
-                .setStyle(Style.EMPTY.withFont(EMOJI_FONT).withColor(color))
-                .append(message);
 
             MinecraftClient.getInstance().player.sendMessage(transformed, false);
         });
@@ -74,6 +105,91 @@ public class Utils {
 
     public static void renderMsg(int color, Text text) {
         renderMsg("Awoo", TextColor.fromRgb(color), text);
+    }
+
+    public static Text notConnectedText() {
+        return NOT_CONNECTED_TEXT;
+    }
+
+    public static Text noJoinedRoomText() {
+        return NO_JOINED_ROOM_TEXT;
+    }
+
+    public static Text prepareCmd(String label, String command) {
+        return prepareCmd(label, command, "Click to prepare command");
+    }
+
+    public static Text prepareCmd(String label, String command, String hoverText) {
+        return text(label, WHITE).styled(style -> style
+            .withClickEvent(new ClickEvent.SuggestCommand(command))
+            .withHoverEvent(new HoverEvent.ShowText(text(hoverText))));
+    }
+
+    public static void flushMessageBuffer() {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client.player != null) {
+            Text msg;
+            while ((msg = MESSAGE_BUFFER.poll()) != null) {
+                client.player.sendMessage(msg, false);
+            }
+        }
+    }
+
+    public static int connectToHost(String ip, int port) {
+        if (isClientConnected()) {
+            renderMsg(INFO_COLOR, "You are already connected to the server");
+            return Command.SINGLE_SUCCESS;
+        }
+
+        URI uri;
+
+        try {
+            uri = new URI("wss://" + ip + ":" + port);
+        } catch (URISyntaxException e) {
+            renderMsg(INFO_COLOR, "Invalid address");
+            return Command.SINGLE_SUCCESS;
+        }
+
+        if (canDisplayMessage()) {
+            renderMsg(INFO_COLOR, "Connecting...");
+        }
+
+        if (Awooing.getInstance().chatClient != null && !Awooing.getInstance().chatClient.isClosed()) {
+            Awooing.getInstance().chatClient.close();
+        }
+
+        Awooing.getInstance().chatClient = new ChatClient(uri);
+
+        try {
+            configureSsl(Awooing.getInstance().chatClient, "client-truststore.p12", "password");
+        } catch (Exception e) {
+            LOGGER.error("Failed to configure SSL", e);
+            if (canDisplayMessage()) {
+                renderMsg(INFO_COLOR, "Failed to configure SSL: " + e.getMessage());
+            }
+            return Command.SINGLE_SUCCESS;
+        }
+
+        Awooing.getInstance().chatClient.connect();
+
+        return Command.SINGLE_SUCCESS;
+    }
+
+    public static boolean canDisplayMessage() {
+        return MinecraftClient.getInstance().player != null;
+    }
+
+    public static void sendConnectHint() {
+        MinecraftClient.getInstance().execute(() -> {
+            MutableText welcome = text("Welcome to Awooing, " + getUsername() + "! Use ")
+                .append(prepareCmd("/connect", "/connect"))
+                .append(text(" to use the service!", INFO_COLOR));
+
+            renderMsg(INFO_COLOR, welcome);
+        });
+
+        ConfigManager.config.showedStartupWelcomeHint = true;
+        ConfigManager.save();
     }
 
     public static void configureSsl(ChatClient client, String truststorePath, String truststorePassword) throws Exception {
@@ -107,6 +223,10 @@ public class Utils {
 
     public static boolean isClientConnected() {
         return getInstance().chatClient != null && getInstance().chatClient.isOpen();
+    }
+
+    public static boolean isAdmin() {
+        return getInstance().permissionType == PermissionType.ADMIN;
     }
 
     public static boolean isLeaderInAnyJoinedRoom() {
@@ -301,11 +421,11 @@ public class Utils {
     }
 
     public static boolean isEmojiStyled(Style style) {
-        return EMOJI_FONT.equals(style.getFont());
+        return SPRITE_FONT.equals(style.getFont());
     }
 
     public static boolean isEmojiGlyphStyled(Style style) {
-        return EMOJI_GLYPH_FONT.equals(style.getFont());
+        return SPRITE_GLYPH_FONT.equals(style.getFont());
     }
 
     public static boolean isTypingAwooMessage(String string) {
@@ -341,10 +461,6 @@ public class Utils {
     }
 
     public static int versionToInt(String version) {
-        if (FabricLoader.getInstance().isDevelopmentEnvironment()) {
-            return 0; 
-        }
-
         String[] parts = version.split("\\.");
         int major = Integer.parseInt(parts[0]);
         int minor = parts.length > 1 ? Integer.parseInt(parts[1]) : 0;
