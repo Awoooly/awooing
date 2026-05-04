@@ -3,6 +3,7 @@ package com.awoly.awooing.client.event;
 import static com.awoly.awooing.client.Utils.INFO_COLOR;
 import static com.awoly.awooing.client.Utils.getActiveRoomId;
 import static com.awoly.awooing.client.Utils.isClientConnected;
+import static com.awoly.awooing.client.Utils.noJoinedRoomText;
 import static com.awoly.awooing.client.Utils.notConnectedText;
 import static com.awoly.awooing.client.Utils.renderMsg;
 import static com.awoly.awooing.client.Utils.setAwooing;
@@ -38,7 +39,7 @@ public class CommandListener {
 
                 String roomId = getActiveRoomId();
                 if (roomId == null) {
-                    renderMsg(INFO_COLOR, "You haven't joined any room");
+                    renderMsg(INFO_COLOR, noJoinedRoomText());
                     return false;
                 }
 

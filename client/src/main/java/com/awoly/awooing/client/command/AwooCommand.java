@@ -11,6 +11,7 @@ import static com.awoly.awooing.client.Utils.getUsername;
 import static com.awoly.awooing.client.Utils.getVersion;
 import static com.awoly.awooing.client.Utils.isAdmin;
 import static com.awoly.awooing.client.Utils.isClientConnected;
+import static com.awoly.awooing.client.Utils.noJoinedRoomText;
 import static com.awoly.awooing.client.Utils.notConnectedText;
 import static com.awoly.awooing.client.Utils.renderMsg;
 import static com.awoly.awooing.client.Utils.showUsage;
@@ -271,7 +272,7 @@ public class AwooCommand {
 
         if (roomId == null) {
             if (joinedRoomIds.isEmpty()) {
-                renderMsg(INFO_COLOR, "You haven't joined any room");
+                renderMsg(INFO_COLOR, noJoinedRoomText());
                 return Command.SINGLE_SUCCESS;
             }
 

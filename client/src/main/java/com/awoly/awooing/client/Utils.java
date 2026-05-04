@@ -47,18 +47,25 @@ public class Utils {
     public static final int PRIVATE_COLOR = 0xFC7DFC;
     public static final int WARN_COLOR = 0xFC465C;
     public static final int WHITE = 0xFFFFFF;
+
     public static final Font SPRITE_FONT = new StyleSpriteSource.Font(Identifier.of("awooing", "emoji_font"));
     public static final Font SPRITE_GLYPH_FONT = new StyleSpriteSource.Font(
             Identifier.of("awooing", "emoji_glyph_font"));
     public static final Pattern EMOJI_PATTERN = Pattern.compile(":([a-zA-Z0-9_]+):", Pattern.CASE_INSENSITIVE);
-    private static final Queue<Text> MESSAGE_BUFFER = new ConcurrentLinkedQueue<>();
-    private static final Text NOT_CONNECTED_TEXT = text("You are not connected, use ")
-        .append(text("/awoo connect", WHITE).styled(style -> style
-            .withClickEvent(new ClickEvent.SuggestCommand("/awoo connect"))
-            .withHoverEvent(new HoverEvent.ShowText(text("Click to prepare command")))))
-        .append(text(" to connect"));
 
+    private static final Queue<Text> MESSAGE_BUFFER = new ConcurrentLinkedQueue<>();
     private static final String[] AWOO_COMMAND_PREFIXES = new String[]{"/a ", "/amsg ", "/ar ", "/f a "};
+
+    private static final Text NOT_CONNECTED_TEXT = text("You are not connected, use ")
+        .append(prepareCmd("/awoo connect", "/awoo connect"))
+        .append(text(" to connect"));
+    private static final Text NO_JOINED_ROOM_TEXT = text("You haven't joined any room. Use ")
+        .append(prepareCmd("/awoo join", "/awoo join "))
+        .append(text(" <room> to join a room or "))
+        .append(prepareCmd("/awoo create", "/awoo create "))
+        .append(text(" <name> to host one yourself. Use "))
+        .append(prepareCmd("/awoo publicrooms", "/awoo publicrooms"))
+        .append(text(" to browse public rooms."));
 
     public static void renderMsg(String prefix, TextColor color, Text message) {
         MinecraftClient.getInstance().execute(() -> {
@@ -102,6 +109,20 @@ public class Utils {
 
     public static Text notConnectedText() {
         return NOT_CONNECTED_TEXT;
+    }
+
+    public static Text noJoinedRoomText() {
+        return NO_JOINED_ROOM_TEXT;
+    }
+
+    public static Text prepareCmd(String label, String command) {
+        return prepareCmd(label, command, "Click to prepare command");
+    }
+
+    public static Text prepareCmd(String label, String command, String hoverText) {
+        return text(label, WHITE).styled(style -> style
+            .withClickEvent(new ClickEvent.SuggestCommand(command))
+            .withHoverEvent(new HoverEvent.ShowText(text(hoverText))));
     }
 
     public static void flushMessageBuffer() {
@@ -161,9 +182,7 @@ public class Utils {
     public static void sendConnectHint() {
         MinecraftClient.getInstance().execute(() -> {
             MutableText welcome = text("Welcome to Awooing, " + getUsername() + "! Use ")
-                .append(text("/connect", WHITE).styled(style -> style
-                    .withClickEvent(new ClickEvent.SuggestCommand("/connect"))
-                    .withHoverEvent(new HoverEvent.ShowText(text("Click to prepare command")))))
+                .append(prepareCmd("/connect", "/connect"))
                 .append(text(" to use the service!", INFO_COLOR));
 
             renderMsg(INFO_COLOR, welcome);
