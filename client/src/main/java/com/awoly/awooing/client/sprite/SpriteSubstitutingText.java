@@ -51,13 +51,15 @@ public final class SpriteSubstitutingText implements OrderedText {
                 continue;
             }
 
-            Sprite existingEmoji = SpriteRegistry.getById(cp);
-            if (existingEmoji != null) {
-                if (!visitor.accept(outIndex++, existingEmoji.getStyle(), existingEmoji.getInternalId())) {
-                    return false;
+            if (Utils.isEmojiGlyphStyled(style)) {
+                Sprite existingEmoji = SpriteRegistry.getById(cp);
+                if (existingEmoji != null) {
+                    if (!visitor.accept(outIndex++, existingEmoji.getStyle(), existingEmoji.getInternalId())) {
+                        return false;
+                    }
+                    i++;
+                    continue;
                 }
-                i++;
-                continue;
             }
 
             if (cp != ':' || !Utils.isEmojiStyled(style)) {
