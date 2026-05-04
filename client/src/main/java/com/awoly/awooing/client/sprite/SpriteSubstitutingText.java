@@ -35,20 +35,14 @@ public final class SpriteSubstitutingText implements OrderedText {
             Style style = styles.get(i);
 
             if (Utils.isEmojiGlyphStyled(style)) {
-                if (!visitor.accept(outIndex++, style, cp)) {
-                    return false;
+                Sprite existingEmoji = SpriteRegistry.getById(cp);
+                if (existingEmoji != null) {
+                    if (!visitor.accept(outIndex++, existingEmoji.getStyle(), existingEmoji.getInternalId())) {
+                        return false;
+                    }
+                    i++;
+                    continue;
                 }
-                i++;
-                continue;
-            }
-
-            Sprite existingEmoji = SpriteRegistry.getById(cp);
-            if (existingEmoji != null) {
-                if (!visitor.accept(outIndex++, existingEmoji.getStyle(), existingEmoji.getInternalId())) {
-                    return false;
-                }
-                i++;
-                continue;
             }
 
             if (cp != ':' || !Utils.isEmojiStyled(style)) {

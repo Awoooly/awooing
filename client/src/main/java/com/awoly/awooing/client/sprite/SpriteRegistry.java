@@ -19,7 +19,7 @@ public class SpriteRegistry {
 
     private static final ConcurrentMap<String, Sprite> SPRITES_BY_NAME = new ConcurrentHashMap<>();
     private static final ConcurrentMap<Integer, Sprite> SPRITES_BY_ID = new ConcurrentHashMap<>();
-    private static final int PUA_START = 0xE800;
+    private static final int PUA_START = 0xE000;
     private static final AtomicInteger NEXT_ID = new AtomicInteger(PUA_START);
     private static final String RESOURCE_PATH = "/assets/awooing/textures/assets/";
     private static final String LIST_FILE = "assets.txt";
