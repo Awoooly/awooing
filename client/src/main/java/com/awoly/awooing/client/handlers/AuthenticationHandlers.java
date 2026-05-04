@@ -1,10 +1,10 @@
 package com.awoly.awooing.client.handlers;
 
 import static com.awoly.awooing.client.Utils.INFO_COLOR;
-import static com.awoly.awooing.client.Utils.WHITE;
 import static com.awoly.awooing.client.Utils.canDisplayMessage;
 import static com.awoly.awooing.client.Utils.getUsername;
 import static com.awoly.awooing.client.Utils.getVersion;
+import static com.awoly.awooing.client.Utils.prepareCmd;
 import static com.awoly.awooing.client.Utils.renderMsg;
 import static com.awoly.awooing.client.Utils.text;
 import static com.awoly.awooing.client.Utils.versionToInt;
@@ -17,8 +17,6 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.session.Session;
-import net.minecraft.text.ClickEvent;
-import net.minecraft.text.HoverEvent;
 import net.minecraft.text.MutableText;
 import org.java_websocket.framing.CloseFrame;
 
@@ -92,21 +90,13 @@ public final class AuthenticationHandlers {
 
             MutableText welcomeText = text(welcome)
                 .append(text("Start with "))
-                .append(text("/awoo join", WHITE).styled(style -> style
-                    .withClickEvent(new ClickEvent.SuggestCommand("/awoo join "))
-                    .withHoverEvent(new HoverEvent.ShowText(text("Click to prepare command")))))
+                .append(prepareCmd("/awoo join", "/awoo join "))
                 .append(text(" <room> to join a room or "))
-                .append(text("/awoo create ", WHITE).styled(style -> style
-                    .withClickEvent(new ClickEvent.SuggestCommand("/awoo create "))
-                    .withHoverEvent(new HoverEvent.ShowText(text("Click to prepare command")))))
+                .append(prepareCmd("/awoo create", "/awoo create "))
                 .append(text(" <name> to host one yourself. Use "))
-                .append(text("/amsg", WHITE).styled(style -> style
-                    .withClickEvent(new ClickEvent.SuggestCommand("/amsg "))
-                    .withHoverEvent(new HoverEvent.ShowText(text("Click to prepare command")))))
+                .append(prepareCmd("/amsg", "/amsg "))
                 .append(text(" <user> <message> to send direct messages, and "))
-                .append(text("/awoo publicrooms", WHITE).styled(style -> style
-                    .withClickEvent(new ClickEvent.SuggestCommand("/awoo publicrooms"))
-                    .withHoverEvent(new HoverEvent.ShowText(text("Click to prepare command")))))
+                .append(prepareCmd("/awoo publicrooms", "/awoo publicrooms"))
                 .append(text(" to browse public rooms."));
 
             renderMsg(INFO_COLOR, welcomeText);
