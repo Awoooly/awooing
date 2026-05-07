@@ -10,6 +10,7 @@ import static org.java_websocket.framing.CloseFrame.NEVER_CONNECTED;
 import static org.java_websocket.framing.CloseFrame.NORMAL;
 import static org.java_websocket.framing.CloseFrame.REFUSE;
 
+import com.awoly.awooing.client.handlers.AnnouncementHandlers;
 import com.awoly.awooing.client.handlers.AuthenticationHandlers;
 import com.awoly.awooing.client.handlers.DirectMessageHandlers;
 import com.awoly.awooing.client.handlers.ForwardingHandlers;
@@ -42,6 +43,7 @@ public class ChatClient extends WebSocketClient {
     private final RoomHandlers roomHandlers = new RoomHandlers();
     private final UserHandlers userHandlers = new UserHandlers();
     private final ForwardingHandlers forwardingHandlers = new ForwardingHandlers();
+    private final AnnouncementHandlers announcementHandlers = new AnnouncementHandlers();
     private final InfoHandlers infoHandlers = new InfoHandlers();
     private final ServerInfoHandler infoHandler = new ServerInfoHandler();
     private final PermissionHandlers permissionHandlers = new PermissionHandlers();
@@ -61,6 +63,7 @@ public class ChatClient extends WebSocketClient {
         registerHandler(Packet.ChangeColorPacket.class, userHandlers::handleChangeColor);
         registerHandler(Packet.ForwardMsgPacket.class, forwardingHandlers::handleForwardMsg);
         registerHandler(Packet.ForwardIsAllowedPacket.class, forwardingHandlers::handleForwardIsAllowed);
+        registerHandler(Packet.AnnouncementPacket.class, announcementHandlers::handleAnnouncement);
         registerHandler(Packet.InfoPacket.class, infoHandlers::handleInfo);
         registerHandler(Packet.ServerInfoPacket.class, infoHandler::handleInfo);
         registerHandler(Packet.PermissionPacket.class, permissionHandlers::handlePermission);
