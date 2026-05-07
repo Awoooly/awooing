@@ -167,6 +167,10 @@ public interface Packet {
         return new OpPacket(target);
     }
 
+    static Packet setLatestClientVersion(String version) {
+        return new LatestClientVersionPacket(version);
+    }
+
     static Packet info(String msg) {
         return new InfoPacket(msg, null, null, null);
     }
@@ -385,6 +389,12 @@ public interface Packet {
         }
     }
 
+    record LatestClientVersionPacket(String version) implements Packet {
+        public PacketType type() {
+            return PacketType.SET_LATEST_CLIENT_VERSION;
+        }
+    }
+
     // client->server: target present, username/color/isOutgoing null
     // server->client: username/color/isOutgoing present, target null
     record PrivateMsgPacket(String target, String sender, String msg, Integer color, Boolean isOutgoing) implements Packet {
@@ -461,6 +471,7 @@ public interface Packet {
                 case ROOM_INVITE      -> ctx.deserialize(obj, RoomInvitePacket.class);
                 case KICK             -> ctx.deserialize(obj, KickPacket.class);
                 case OP               -> ctx.deserialize(obj, OpPacket.class);
+                case SET_LATEST_CLIENT_VERSION -> ctx.deserialize(obj, LatestClientVersionPacket.class);
                 case PRIVATE_MSG      -> ctx.deserialize(obj, PrivateMsgPacket.class);
             };
         }

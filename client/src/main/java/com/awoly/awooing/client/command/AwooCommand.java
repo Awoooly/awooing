@@ -121,6 +121,11 @@ public class AwooCommand {
                 .executes(ctx -> showUsage("/awoo op <username>"))
                 .then(argument("username", word()).suggests(suggestUsers())
                     .executes(ctx -> op(getString(ctx, "username")))))
+            .then(literal("setlatest")
+                .requires(ctx -> isAdmin())
+                .executes(ctx -> showUsage("/awoo setlatest <version>"))
+                .then(argument("version", greedyString())
+                    .executes(ctx -> setLatestClientVersion(getString(ctx, "version")))))
             .then(literal("autoconnect").executes(ctx -> toggleAutoConnect()))
             .then(literal("emojis").executes(ctx -> listEmojis()))
             .then(literal("disconnect").executes(ctx -> disconnect()))
@@ -263,6 +268,15 @@ public class AwooCommand {
         }
 
         Awooing.getInstance().chatClient.sendPacket(Packet.op(username));
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int setLatestClientVersion(String version) {
+        if (!requireConnected()) {
+            return Command.SINGLE_SUCCESS;
+        }
+
+        Awooing.getInstance().chatClient.sendPacket(Packet.setLatestClientVersion(version));
         return Command.SINGLE_SUCCESS;
     }
 
