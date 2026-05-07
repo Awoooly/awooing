@@ -28,6 +28,7 @@ public enum PacketType {
     ROOM_INVITE("room_invite"),
     KICK("kick"),
     OP("op"),
+    SET_LATEST_CLIENT_VERSION("set_latest_client_version"),
     PRIVATE_MSG("private_msg");
 
     private final String key;
