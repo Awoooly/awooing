@@ -22,7 +22,9 @@ public final class RoomHandlers {
 
     public void handleRoomCreated(Packet.RoomCreatedPacket packet) {
         String roomId = packet.roomId();
-        Awooing.getInstance().currentRoomId = roomId;
+        if (Awooing.getInstance().currentRoomId == null) {
+            Awooing.getInstance().currentRoomId = roomId;
+        }
         renderMsg(roomId, INFO_COLOR, "Room created");
 
         if (!ConfigManager.config.showedLeaderHint) {
