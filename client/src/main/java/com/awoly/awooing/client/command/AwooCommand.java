@@ -129,7 +129,7 @@ public class AwooCommand {
                 .then(argument("room", word()).suggests(suggestRooms())
                     .executes(ctx -> leaveRoom(getString(ctx, "room")))))
             .then(literal("color").executes(ctx -> showColor())
-                .then(argument("color", word()).executes(ctx -> changeColor(getString(ctx, "color")))))
+                .then(argument("color", greedyString()).executes(ctx -> changeColor(getString(ctx, "color")))))
             .then(literal("forward")
                 .executes(ctx -> showUsage("/awoo forward <allow|revoke|request|list|sender> ..."))
                 .then(literal("allow").executes(ctx -> showUsage("/awoo forward allow <user>"))
