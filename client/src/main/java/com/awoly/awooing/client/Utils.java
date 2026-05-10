@@ -180,6 +180,10 @@ public class Utils {
     }
 
     public static void sendConnectHint() {
+        if (ConfigManager.config.showedConnectedHint) {
+            return;
+        }
+
         MinecraftClient.getInstance().execute(() -> {
             MutableText welcome = text("Welcome to Awooing, " + getUsername() + "! Use ")
                 .append(prepareCmd("/connect", "/connect"))
@@ -188,7 +192,7 @@ public class Utils {
             renderMsg(INFO_COLOR, welcome);
         });
 
-        ConfigManager.config.showedStartupWelcomeHint = true;
+        ConfigManager.config.showedConnectedHint = true;
         ConfigManager.save();
     }
 
