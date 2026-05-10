@@ -26,10 +26,7 @@ public final class RoomHandlers {
             Awooing.getInstance().currentRoomId = roomId;
         }
         renderMsg(roomId, INFO_COLOR, "Room created");
-
-        if (!ConfigManager.config.showedLeaderHint) {
-            sendLeaderHint(roomId);
-        }
+        sendLeaderHint(roomId);
     }
 
     public void handleRoomList(Packet.RoomListPacket packet) {
@@ -139,6 +136,10 @@ public final class RoomHandlers {
     }
 
     private void sendLeaderHint(String roomId) {
+        if (ConfigManager.config.showedLeaderHint) {
+            return;
+        }
+
         MutableText hintText = text("Use ")
             .append(prepareCmd("/awoo kick", "/awoo kick "))
             .append(text(" to remove users, "))
