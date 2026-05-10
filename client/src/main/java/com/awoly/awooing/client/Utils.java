@@ -11,9 +11,11 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.util.Arrays;
 import java.util.Collection;
@@ -146,7 +148,10 @@ public class Utils {
         try {
             uri = new URI("wss://" + ip + ":" + port);
         } catch (URISyntaxException e) {
-            renderMsg(INFO_COLOR, "Invalid address");
+            LOGGER.warn("Invalid address", e);
+            if (canDisplayMessage()) {
+                renderMsg(INFO_COLOR, "Invalid address: " + e.getMessage());
+            }
             return Command.SINGLE_SUCCESS;
         }
 
@@ -162,7 +167,7 @@ public class Utils {
 
         try {
             configureSsl(Awooing.getInstance().chatClient, "client-truststore.p12", "password");
-        } catch (Exception e) {
+        } catch (IOException | GeneralSecurityException e) {
             LOGGER.error("Failed to configure SSL", e);
             if (canDisplayMessage()) {
                 renderMsg(INFO_COLOR, "Failed to configure SSL: " + e.getMessage());
@@ -180,6 +185,10 @@ public class Utils {
     }
 
     public static void sendConnectHint() {
+        if (ConfigManager.config.showedConnectedHint) {
+            return;
+        }
+
         MinecraftClient.getInstance().execute(() -> {
             MutableText welcome = text("Welcome to Awooing, " + getUsername() + "! Use ")
                 .append(prepareCmd("/connect", "/connect"))
@@ -188,17 +197,18 @@ public class Utils {
             renderMsg(INFO_COLOR, welcome);
         });
 
-        ConfigManager.config.showedStartupWelcomeHint = true;
+        ConfigManager.config.showedConnectedHint = true;
         ConfigManager.save();
     }
 
-    public static void configureSsl(ChatClient client, String truststorePath, String truststorePassword) throws Exception {
+    public static void configureSsl(ChatClient client, String truststorePath, String truststorePassword)
+            throws IOException, GeneralSecurityException {
         try (InputStream stream = Optional
             .ofNullable(ChatClient.class.getResourceAsStream("/" + truststorePath))
             .orElseGet(() -> ChatClient.class.getClassLoader().getResourceAsStream(truststorePath))) {
 
             if (stream == null) {
-                throw new IllegalArgumentException("Truststore file not found: " + truststorePath);
+                throw new IOException("Truststore file not found: " + truststorePath);
             }
 
             KeyStore trustStore = KeyStore.getInstance("PKCS12");
@@ -211,8 +221,6 @@ public class Utils {
             sslContext.init(null, tmf.getTrustManagers(), null);
             client.setSocketFactory(sslContext.getSocketFactory());
             LOGGER.info("SSL/TLS configured successfully");
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to configure SSL", e);
         }
     }
 

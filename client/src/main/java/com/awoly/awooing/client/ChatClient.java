@@ -114,7 +114,7 @@ public class ChatClient extends WebSocketClient {
             case NEVER_CONNECTED -> canDisplayMessage() ? "Connecting to server failed" : null;
             case NORMAL          -> null;
             case GOING_AWAY      -> "Server is shutting down, disconnecting";
-            case REFUSE          -> reason;
+            case REFUSE          -> canDisplayMessage() ? reason : null;
             default              -> "Connection lost";
         };
 
