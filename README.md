@@ -22,7 +22,7 @@
 Minecraft chat is limited to users one the same world or the same server. Awooing connects you to an external chat-server, that lets you send messages wherever you want!
 
 <div align="center">
-  <img src="https://private-user-images.githubusercontent.com/128640351/589062352-8973aeba-049b-4e64-9b73-067ed44cfcb1.gif?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NzgxNzU3NzEsIm5iZiI6MTc3ODE3NTQ3MSwicGF0aCI6Ii8xMjg2NDAzNTEvNTg5MDYyMzUyLTg5NzNhZWJhLTA0OWItNGU2NC05YjczLTA2N2VkNDRjZmNiMS5naWY_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1BS0lBVkNPRFlMU0E1M1BRSzRaQSUyRjIwMjYwNTA3JTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDI2MDUwN1QxNzM3NTFaJlgtQW16LUV4cGlyZXM9MzAwJlgtQW16LVNpZ25hdHVyZT1mNWMwZGQ3OWM3ZDk4YzQ5YzZiMDc1NGRlNDNiYTAwNGViZGQyY2NiYzlmMDhhODI5OTU5YzI4MmVlZTA1MGI3JlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCZyZXNwb25zZS1jb250ZW50LXR5cGU9aW1hZ2UlMkZnaWYifQ.nHll9I-4FPZfd_8_9pIXz1dZUKry1Xh52Ng5jpQTokg" alt="Awooing demo" width="90%">
+  <img src="https://github.com/user-attachments/assets/8973aeba-049b-4e64-9b73-067ed44cfcb1" alt="Awooing demo" width="90%">
 </div>
 
 ## Download and Installation
